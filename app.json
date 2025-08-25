@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "holy-ghost-tracker",
+    "name": "Holy Ghost Tracker",
     "slug": "holy-ghost-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,8 +20,22 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "sounds": []
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }
