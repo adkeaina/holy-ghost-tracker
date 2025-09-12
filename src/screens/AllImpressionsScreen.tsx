@@ -7,14 +7,14 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { SpiritualImpression } from "../types";
+import { SpiritualImpression, ImpressionCategory } from "../types";
 import {
   getImpressions,
   updateImpression,
@@ -67,6 +67,7 @@ export default function AllImpressionsScreen() {
   const handleUpdate = async (data: {
     description: string;
     dateTime: string;
+    categories: number[];
   }) => {
     if (!selectedImpression) return;
 
@@ -74,6 +75,7 @@ export default function AllImpressionsScreen() {
       await updateImpression(selectedImpression.id, {
         description: data.description,
         dateTime: data.dateTime,
+        categories: data.categories,
       });
 
       setModalVisible(false);
@@ -138,7 +140,7 @@ export default function AllImpressionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
         <Text style={styles.title}>All Impressions 🕊️</Text>
         <Text style={styles.subtitle}>
@@ -146,7 +148,6 @@ export default function AllImpressionsScreen() {
           {impressions.length !== 1 ? "s" : ""}
         </Text>
       </View>
-
       {impressions.length > 0 ? (
         <FlatList
           data={impressions}
@@ -163,7 +164,6 @@ export default function AllImpressionsScreen() {
           </Text>
         </View>
       )}
-
       {/* Edit Modal */}
       <Modal
         animationType='slide'
@@ -171,38 +171,49 @@ export default function AllImpressionsScreen() {
         visible={modalVisible}
         onRequestClose={closeModal}
       >
-        <KeyboardAvoidingView
+        <TouchableOpacity
           style={styles.modalOverlay}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          activeOpacity={1}
+          onPress={closeModal}
         >
-          <View style={styles.modalContent}>
-            {/* Close X button */}
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-
-            {/* Delete button */}
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoidingView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          >
             <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDelete}
+              style={styles.modalContent}
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
             >
-              <Ionicons name='trash-outline' size={20} color='red' />
+              {/* Close X button */}
+              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              {/* Delete button */}
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <Ionicons name='trash-outline' size={20} color='red' />
+              </TouchableOpacity>
+
+              <Text style={styles.modalTitle}>Edit Impression</Text>
+
+              {selectedImpression && (
+                <NewImpressionForm
+                  isEdit={true}
+                  initialDescription={selectedImpression.description}
+                  initialDateTime={selectedImpression.dateTime}
+                  initialCategories={selectedImpression.categories}
+                  onUpdate={handleUpdate}
+                  onSuccess={() => {}}
+                />
+              )}
             </TouchableOpacity>
-
-            <Text style={styles.modalTitle}>Edit Impression</Text>
-
-            {selectedImpression && (
-              <NewImpressionForm
-                isEdit={true}
-                initialDescription={selectedImpression.description}
-                initialDateTime={selectedImpression.dateTime}
-                onUpdate={handleUpdate}
-                onSuccess={() => {}}
-              />
-            )}
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -259,6 +270,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
   modalContent: {
     backgroundColor: "transparent",

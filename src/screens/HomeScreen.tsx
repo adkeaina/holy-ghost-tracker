@@ -4,13 +4,16 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import { SpiritualImpression } from "../types";
-import { getLastImpression } from "../utils/storage";
+import { getLastImpression, resetCategoriesToDefault } from "../utils/storage";
 import {
   formatTimeDuration,
   formatDateTime,
@@ -62,8 +65,38 @@ export default function HomeScreen() {
     }, 100);
   };
 
+  const handleResetCategories = () => {
+    Alert.alert(
+      "Reset Categories",
+      "This will reset all categories to default (Church, BYU) and remove all categories from existing impressions. This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              await resetCategoriesToDefault();
+              Alert.alert("Success", "Categories have been reset to default!");
+            } catch (error) {
+              console.error("Error resetting categories:", error);
+              Alert.alert(
+                "Error",
+                "Failed to reset categories. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -82,6 +115,18 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>
               Track your spiritual impressions
             </Text>
+          </View>
+
+          {/* Test Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Testing Tools</Text>
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleResetCategories}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.testButtonText}>Reset Categories</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Last Impression */}
@@ -175,5 +220,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     fontFamily: "monospace",
+  },
+  testButton: {
+    backgroundColor: "#e74c3c",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#c0392b",
+  },
+  testButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

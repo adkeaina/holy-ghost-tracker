@@ -12,14 +12,21 @@ import {
 import * as Haptics from "expo-haptics";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { saveImpression } from "../utils/storage";
+import { ImpressionCategory } from "../types";
+import CategoryList from "./CategoryList";
 
 interface NewImpressionFormProps {
   onSuccess?: () => void;
   initialDescription?: string;
   initialDateTime?: string;
+  initialCategories?: number[];
   isEdit?: boolean;
   impressionId?: string;
-  onUpdate?: (data: { description: string; dateTime: string }) => void;
+  onUpdate?: (data: {
+    description: string;
+    dateTime: string;
+    categories: number[];
+  }) => void;
   onDescriptionFocus?: () => void;
 }
 
@@ -27,6 +34,7 @@ export default function NewImpressionForm({
   onSuccess,
   initialDescription = "",
   initialDateTime,
+  initialCategories = [],
   isEdit = false,
   impressionId,
   onUpdate,
@@ -36,6 +44,8 @@ export default function NewImpressionForm({
   const [selectedDate, setSelectedDate] = useState(
     initialDateTime ? new Date(initialDateTime) : new Date()
   );
+  const [selectedCategories, setSelectedCategories] =
+    useState<number[]>(initialCategories);
   const [isLoading, setIsLoading] = useState(false);
 
   // Set default date/time to current date/time for new impressions
@@ -88,16 +98,19 @@ export default function NewImpressionForm({
         await onUpdate({
           description: description.trim(),
           dateTime: selectedDate.toISOString(),
+          categories: selectedCategories,
         });
       } else {
         // Handle new impression
         await saveImpression({
           description: description.trim(),
           dateTime: selectedDate.toISOString(),
+          categories: selectedCategories,
         });
 
         setDescription("");
         setSelectedDate(new Date());
+        setSelectedCategories([]);
         Alert.alert("Success", "Spiritual impression saved successfully!");
       }
 
@@ -155,6 +168,11 @@ export default function NewImpressionForm({
           textAlignVertical='top'
         />
       </View>
+
+      <CategoryList
+        selectedCategories={selectedCategories}
+        onSelectionChange={setSelectedCategories}
+      />
 
       <TouchableOpacity
         style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}

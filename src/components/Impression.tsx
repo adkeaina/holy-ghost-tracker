@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
-import { SpiritualImpression } from "../types";
+import { SpiritualImpression, ImpressionCategory } from "../types";
 import { formatDateTime } from "../utils/time";
+import { resolveCategoryIds } from "../utils/storage";
+import CategoryChip from "./CategoryChip";
 
 interface ImpressionProps {
   impression?: SpiritualImpression | null;
@@ -23,6 +25,22 @@ export default function Impression({
   expanded = false,
   activeOpacity = 1,
 }: ImpressionProps) {
+  const [resolvedCategories, setResolvedCategories] = useState<
+    ImpressionCategory[]
+  >([]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (impression?.categories && impression.categories.length > 0) {
+        const categories = await resolveCategoryIds(impression.categories);
+        setResolvedCategories(categories);
+      } else {
+        setResolvedCategories([]);
+      }
+    };
+
+    loadCategories();
+  }, [impression?.categories]);
   if (!impression && showEmptyState) {
     return (
       <View style={styles.impressionCard}>
@@ -56,6 +74,20 @@ export default function Impression({
       >
         {impression.description}
       </Text>
+
+      {resolvedCategories.length > 0 && (
+        <View style={styles.categoriesContainer}>
+          {resolvedCategories.map((category) => (
+            <CategoryChip
+              key={category.id}
+              category={category}
+              size='small'
+              disabled
+            />
+          ))}
+        </View>
+      )}
+
       <Text style={styles.impressionDate}>
         {formatDateTime(impression.dateTime)}
       </Text>
@@ -82,6 +114,12 @@ const styles = StyleSheet.create({
     color: "#2c3e50",
     lineHeight: 22,
     marginBottom: 10,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    marginBottom: 8,
   },
   impressionDate: {
     fontSize: 14,
