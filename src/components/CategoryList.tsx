@@ -13,12 +13,14 @@ import CategoryChip from "./CategoryChip";
 import CategoryModal from "./CategoryModal";
 
 interface CategoryListProps {
+  readonly?: boolean;
   selectedCategories: number[];
   onSelectionChange: (categories: number[]) => void;
   style?: any;
 }
 
 export default function CategoryList({
+  readonly = true,
   selectedCategories,
   onSelectionChange,
   style,
@@ -84,7 +86,7 @@ export default function CategoryList({
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.label}>Categories</Text>
+      {!readonly && <Text style={styles.label}>Categories</Text>}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -101,9 +103,11 @@ export default function CategoryList({
         ))}
 
         {/* Add Category Button */}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddPress}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
+        {!readonly && (
+          <TouchableOpacity style={styles.addButton} onPress={handleAddPress}>
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <CategoryModal
