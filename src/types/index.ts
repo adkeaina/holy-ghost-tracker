@@ -28,5 +28,12 @@ export interface UserProfile {
 export type RootTabParamList = {
   Home: undefined;
   AllImpressions: undefined;
+  AIQuiz: undefined;
   Profile: undefined;
 };
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+}

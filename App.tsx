@@ -2,11 +2,12 @@ import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
-import { Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { RootTabParamList } from "./src/types";
 import HomeScreen from "./src/screens/HomeScreen";
 import AllImpressionsScreen from "./src/screens/AllImpressionsScreen";
+import QuizScreen from "./src/screens/QuizScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { getCategories } from "./src/utils/storage";
@@ -55,7 +56,7 @@ export default function App() {
             component={HomeScreen}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: size, color }}>🏠</Text>
+                <Ionicons name='home' size={size} color={color} />
               ),
               tabBarLabel: "Home",
             }}
@@ -65,9 +66,19 @@ export default function App() {
             component={AllImpressionsScreen}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: size, color }}>🕊️</Text>
+                <Ionicons name='heart' size={size} color={color} />
               ),
               tabBarLabel: "Insights",
+            }}
+          />
+          <Tab.Screen
+            name='AIQuiz'
+            component={QuizScreen}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name='school' size={size} color={color} />
+              ),
+              tabBarLabel: "AI Quiz",
             }}
           />
           <Tab.Screen
@@ -75,7 +86,7 @@ export default function App() {
             component={ProfileScreen}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: size, color }}>👤</Text>
+                <Ionicons name='person' size={size} color={color} />
               ),
               tabBarLabel: "Profile",
             }}

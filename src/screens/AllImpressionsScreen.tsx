@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
 } from "../utils/storage";
 import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
+import FilterModal, { FilterOptions } from "../components/FilterModal";
 
 export default function AllImpressionsScreen() {
   const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
@@ -30,12 +31,116 @@ export default function AllImpressionsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedImpression, setExpandedImpression] =
     useState<SpiritualImpression | null>(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    categories: [],
+    dateRange: { type: "all" },
+    description: "",
+  });
 
   useFocusEffect(
     useCallback(() => {
       loadImpressions();
     }, [])
   );
+
+  // Filter impressions based on current filters
+  const filteredImpressions = useMemo(() => {
+    let filtered = [...impressions];
+
+    // Description filter (case insensitive)
+    if (filters.description.trim()) {
+      const searchTerm = filters.description.toLowerCase().trim();
+      filtered = filtered.filter((impression) =>
+        impression.description.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Category filter
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter((impression) =>
+        filters.categories.some((categoryId) =>
+          impression.categories.includes(categoryId)
+        )
+      );
+    }
+
+    // Date filter
+    if (filters.dateRange.type !== "all") {
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = new Date(now.getTime() + 24 * 60 * 60 * 1000); // End of today
+
+      if (filters.dateRange.type === "preset" && filters.dateRange.preset) {
+        switch (filters.dateRange.preset) {
+          case "today":
+            startDate = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate()
+            );
+            break;
+          case "yesterday":
+            startDate = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate() - 1
+            );
+            endDate = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate()
+            );
+            break;
+          case "last7days":
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "last30days":
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "last3months":
+            startDate = new Date(
+              now.getFullYear(),
+              now.getMonth() - 3,
+              now.getDate()
+            );
+            break;
+          case "last6months":
+            startDate = new Date(
+              now.getFullYear(),
+              now.getMonth() - 6,
+              now.getDate()
+            );
+            break;
+          case "lastYear":
+            startDate = new Date(
+              now.getFullYear() - 1,
+              now.getMonth(),
+              now.getDate()
+            );
+            break;
+          default:
+            startDate = new Date(0); // Beginning of time
+        }
+      } else if (filters.dateRange.type === "custom") {
+        startDate = filters.dateRange.customFrom
+          ? new Date(filters.dateRange.customFrom)
+          : new Date(0);
+        endDate = filters.dateRange.customTo
+          ? new Date(filters.dateRange.customTo)
+          : endDate;
+      } else {
+        startDate = new Date(0);
+      }
+
+      filtered = filtered.filter((impression) => {
+        const impressionDate = new Date(impression.createdAt);
+        return impressionDate >= startDate && impressionDate <= endDate;
+      });
+    }
+
+    return filtered;
+  }, [impressions, filters]);
 
   const loadImpressions = async () => {
     try {
@@ -127,6 +232,27 @@ export default function AllImpressionsScreen() {
     setSelectedImpression(null);
   };
 
+  const handleFilterPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFilterModalVisible(true);
+  };
+
+  const handleFilterClose = () => {
+    setFilterModalVisible(false);
+  };
+
+  const handleFilterApply = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+  };
+
+  const hasActiveFilters = () => {
+    return (
+      filters.categories.length > 0 ||
+      filters.dateRange.type !== "all" ||
+      filters.description.trim() !== ""
+    );
+  };
+
   const renderImpression = ({ item }: { item: SpiritualImpression }) => (
     <View style={styles.impressionContainer}>
       <Impression
@@ -142,20 +268,60 @@ export default function AllImpressionsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
-        <Text style={styles.title}>All Impressions 🕊️</Text>
-        <Text style={styles.subtitle}>
-          {impressions.length} spiritual impression
-          {impressions.length !== 1 ? "s" : ""}
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>All Impressions 🕊️</Text>
+            <Text style={styles.subtitle}>
+              {filteredImpressions.length} of {impressions.length} impression
+              {impressions.length !== 1 ? "s" : ""}
+              {hasActiveFilters() && " (filtered)"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              hasActiveFilters() && styles.filterButtonActive,
+            ]}
+            onPress={handleFilterPress}
+          >
+            <Ionicons
+              name='filter'
+              size={24}
+              color={hasActiveFilters() ? "#3498db" : "#7f8c8d"}
+            />
+            {hasActiveFilters() && <View style={styles.filterIndicator} />}
+          </TouchableOpacity>
+        </View>
       </View>
       {impressions.length > 0 ? (
-        <FlatList
-          data={impressions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderImpression}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
+        filteredImpressions.length > 0 ? (
+          <FlatList
+            data={filteredImpressions}
+            keyExtractor={(item) => item.id}
+            renderItem={renderImpression}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No matching impressions</Text>
+            <Text style={styles.emptySubtext}>
+              Try adjusting your filters to see more results
+            </Text>
+            <TouchableOpacity
+              style={styles.clearFiltersButton}
+              onPress={() =>
+                setFilters({
+                  categories: [],
+                  dateRange: { type: "all" },
+                  description: "",
+                })
+              }
+            >
+              <Text style={styles.clearFiltersButtonText}>Clear Filters</Text>
+            </TouchableOpacity>
+          </View>
+        )
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No spiritual impressions yet</Text>
@@ -215,6 +381,14 @@ export default function AllImpressionsScreen() {
           </KeyboardAvoidingView>
         </TouchableOpacity>
       </Modal>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={handleFilterClose}
+        onApply={handleFilterApply}
+        initialFilters={filters}
+      />
     </SafeAreaView>
   );
 }
@@ -227,6 +401,14 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingBottom: 10,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  titleContainer: {
+    flex: 1,
     alignItems: "center",
   },
   title: {
@@ -319,5 +501,38 @@ const styles = StyleSheet.create({
     height: 30,
     justifyContent: "center",
     alignItems: "center",
+  },
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#ecf0f1",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  filterButtonActive: {
+    backgroundColor: "#ddeaf7",
+  },
+  filterIndicator: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#3498db",
+  },
+  clearFiltersButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: "#3498db",
+    borderRadius: 8,
+  },
+  clearFiltersButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -170,6 +170,7 @@ export default function NewImpressionForm({
       </View>
 
       <CategoryList
+        readonly={false}
         selectedCategories={selectedCategories}
         onSelectionChange={setSelectedCategories}
       />
