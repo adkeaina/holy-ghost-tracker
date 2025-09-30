@@ -309,3 +309,17 @@ export const resolveCategoryIds = async (
     return [];
   }
 };
+
+export const getEnv = (key: string): string => {
+  try {
+    const value = process.env[key];
+    if (!value) {
+      console.error(`Environment variable ${key} is not set`);
+      return "";
+    }
+    return value;
+  } catch (error) {
+    console.error("Error getting environment variable:", error);
+    return "";
+  }
+};
