@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import { NotificationSettings } from "../types";
 import { getEnv } from "./storage";
 
-const environment = getEnv("EXPO_PUBLIC_ENV");
+const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

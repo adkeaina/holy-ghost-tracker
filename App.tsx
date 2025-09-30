@@ -1,33 +1,81 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet } from "react-native";
 
 import { RootTabParamList } from "./src/types";
 import HomeScreen from "./src/screens/HomeScreen";
 import AllImpressionsScreen from "./src/screens/AllImpressionsScreen";
 import QuizScreen from "./src/screens/QuizScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import OnboardingScreen from "./src/screens/OnboardingScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { getCategories } from "./src/utils/storage";
+import {
+  getCategories,
+  getHasOnboarded,
+  completeOnboarding,
+} from "./src/utils/storage";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export default function App() {
-  // Initialize categories on app startup
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize app on startup
   useEffect(() => {
-    const initializeCategories = async () => {
+    const initializeApp = async () => {
       try {
-        // This will seed default categories if none exist
+        // Check onboarding status
+        const onboardingStatus = await getHasOnboarded();
+        setHasOnboarded(onboardingStatus);
+
+        // Initialize categories if needed
         await getCategories();
       } catch (error) {
-        console.error("Error initializing categories:", error);
+        console.error("Error initializing app:", error);
+        setHasOnboarded(false); // Default to showing onboarding on error
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    initializeCategories();
+    initializeApp();
   }, []);
+
+  const handleOnboardingComplete = async (name: string, email: string) => {
+    try {
+      await completeOnboarding(name, email);
+      setHasOnboarded(true);
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      throw error;
+    }
+  };
+
+  // Show loading screen while checking onboarding status
+  if (isLoading) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+        <StatusBar style='auto' />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Show onboarding screen if user hasn't onboarded
+  if (!hasOnboarded) {
+    return (
+      <SafeAreaProvider>
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+        <StatusBar style='auto' />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -97,3 +145,17 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#7f8c8d",
+    fontWeight: "500",
+  },
+});
