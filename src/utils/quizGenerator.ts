@@ -1,4 +1,5 @@
 import { QuizQuestion, SpiritualImpression } from "../types";
+import { getEnv } from "./storage";
 
 export interface QuizGenerationResult {
   questions: QuizQuestion[];
@@ -19,7 +20,8 @@ export async function generateQuiz(
   input: SpiritualImpression[] | string,
   questionCount: number = 5
 ): Promise<QuizGenerationResult | QuizGenerationError> {
-  const openAIKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+  const openAIKey = getEnv("EXPO_PUBLIC_OPENAI_API_KEY");
+  console.log("OpenAI Key:", openAIKey);
   if (!openAIKey) {
     return { error: "OpenAI API key is not provided" };
   }

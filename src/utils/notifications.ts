@@ -1,5 +1,8 @@
 import * as Notifications from "expo-notifications";
 import { NotificationSettings } from "../types";
+import { getEnv } from "./storage";
+
+const environment = getEnv("EXPO_PUBLIC_ENV");
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -50,9 +53,11 @@ export const scheduleNotification = async (
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `You haven't felt the Holy Ghost for ${
-          settings.intervalDays
-        } day${settings.intervalDays > 1 ? "s" : ""}`,
+        title: `${
+          environment === "dev" ? "[DEV MODE] " : ""
+        }You haven't felt the Holy Ghost for ${settings.intervalDays} day${
+          settings.intervalDays > 1 ? "s" : ""
+        }`,
         body: randomMessage,
         sound: true,
       },

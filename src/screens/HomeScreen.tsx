@@ -13,14 +13,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { SpiritualImpression } from "../types";
-import { getLastImpression, resetCategoriesToDefault } from "../utils/storage";
 import {
-  formatTimeDuration,
-  formatDateTime,
-  getTimeSinceLastImpression,
-} from "../utils/time";
+  getLastImpression,
+  resetCategoriesToDefault,
+  getEnv,
+} from "../utils/storage";
+import { formatTimeDuration, getTimeSinceLastImpression } from "../utils/time";
 import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
+
+const environment = getEnv("EXPO_PUBLIC_ENV");
 
 export default function HomeScreen() {
   const [lastImpression, setLastImpression] =
@@ -118,16 +120,18 @@ export default function HomeScreen() {
           </View>
 
           {/* Test Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Testing Tools</Text>
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleResetCategories}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.testButtonText}>Reset Categories</Text>
-            </TouchableOpacity>
-          </View>
+          {environment === "dev" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Testing Tools</Text>
+              <TouchableOpacity
+                style={styles.testButton}
+                onPress={handleResetCategories}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.testButtonText}>Reset Categories</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Last Impression */}
           <View style={styles.section}>
