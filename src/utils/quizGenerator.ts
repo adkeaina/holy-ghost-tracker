@@ -21,7 +21,6 @@ export async function generateQuiz(
   questionCount: number = 5
 ): Promise<QuizGenerationResult | QuizGenerationError> {
   const openAIKey = getEnv("EXPO_PUBLIC_OPENAI_API_KEY");
-  console.log("OpenAI Key:", openAIKey);
   if (!openAIKey) {
     return { error: "OpenAI API key is not provided" };
   }
@@ -159,7 +158,6 @@ Make the questions thoughtful and test both specific details and broader spiritu
         }
 
         const messageContent = data.choices[0].message.content;
-        console.log("Raw OpenAI response content:", messageContent);
 
         if (!messageContent) {
           throw new Error("Empty response from OpenAI API");
@@ -177,8 +175,6 @@ Make the questions thoughtful and test both specific details and broader spiritu
             jsonContent = arrayMatch[0];
           }
         }
-
-        console.log("Parsed JSON content:", jsonContent);
 
         const quizQuestions = JSON.parse(jsonContent);
 

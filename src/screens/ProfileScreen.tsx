@@ -7,12 +7,17 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import { UserProfile, NotificationSettings } from "../types";
-import { getUserProfile, updateNotificationSettings } from "../utils/storage";
+import {
+  getUserProfile,
+  updateNotificationSettings,
+  saveUserProfile,
+} from "../utils/storage";
 import {
   scheduleNotification,
   requestNotificationPermissions,
@@ -29,6 +34,8 @@ const NOTIFICATION_INTERVALS = [
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingName, setEditingName] = useState("");
+  const [editingEmail, setEditingEmail] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -40,8 +47,66 @@ export default function ProfileScreen() {
     try {
       const userProfile = await getUserProfile();
       setProfile(userProfile);
+      setEditingName(userProfile.name);
+      setEditingEmail(userProfile.email);
     } catch (error) {
       console.error("Error loading profile:", error);
+    }
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleNameBlur = async () => {
+    if (!profile) return;
+
+    const trimmedName = editingName.trim();
+    if (!trimmedName) {
+      // Revert to original name if empty
+      setEditingName(profile.name);
+      return;
+    }
+
+    if (trimmedName !== profile.name) {
+      try {
+        const updatedProfile = { ...profile, name: trimmedName };
+        await saveUserProfile(updatedProfile);
+        setProfile(updatedProfile);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (error) {
+        console.error("Error updating name:", error);
+        setEditingName(profile.name); // Revert on error
+        Alert.alert("Error", "Failed to update name. Please try again.");
+      }
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    if (!profile) return;
+
+    const trimmedEmail = editingEmail.trim();
+    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
+      // Revert to original email if empty or invalid
+      setEditingEmail(profile.email);
+      if (trimmedEmail && !validateEmail(trimmedEmail)) {
+        Alert.alert("Invalid Email", "Please enter a valid email address.");
+      }
+      return;
+    }
+
+    if (trimmedEmail !== profile.email) {
+      try {
+        const updatedProfile = { ...profile, email: trimmedEmail };
+        await saveUserProfile(updatedProfile);
+        setProfile(updatedProfile);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (error) {
+        console.error("Error updating email:", error);
+        setEditingEmail(profile.email); // Revert on error
+        Alert.alert("Error", "Failed to update email. Please try again.");
+      }
     }
   };
 
@@ -168,11 +233,34 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>{profile.name}</Text>
+              <TextInput
+                style={styles.infoValue}
+                value={editingName}
+                onChangeText={setEditingName}
+                onBlur={handleNameBlur}
+                placeholder='Enter your name'
+                placeholderTextColor='#bdc3c7'
+                autoCapitalize='words'
+                autoCorrect={false}
+                returnKeyType='next'
+                editable={!isLoading}
+              />
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{profile.email}</Text>
+              <TextInput
+                style={styles.infoValue}
+                value={editingEmail}
+                onChangeText={setEditingEmail}
+                onBlur={handleEmailBlur}
+                placeholder='Enter your email'
+                placeholderTextColor='#bdc3c7'
+                keyboardType='email-address'
+                autoCapitalize='none'
+                autoCorrect={false}
+                returnKeyType='done'
+                editable={!isLoading}
+              />
             </View>
           </View>
         </View>
