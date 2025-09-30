@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -17,12 +17,13 @@ import {
   getLastImpression,
   resetCategoriesToDefault,
   getEnv,
+  resetUserInfo,
 } from "../utils/storage";
 import { formatTimeDuration, getTimeSinceLastImpression } from "../utils/time";
 import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
 
-const environment = getEnv("EXPO_PUBLIC_ENV");
+const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
 export default function HomeScreen() {
   const [lastImpression, setLastImpression] =
@@ -97,6 +98,43 @@ export default function HomeScreen() {
     );
   };
 
+  const handleResetUserInfo = async () => {
+    Alert.alert(
+      "Reset User Info",
+      "This will clear your name, email, and reset the app to show onboarding again. Are you sure?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await resetUserInfo();
+              Alert.alert(
+                "Reset Complete",
+                "User info has been reset. Please restart the app to see onboarding again.",
+                [
+                  {
+                    text: "OK",
+                  },
+                ]
+              );
+            } catch (error) {
+              console.error("Error resetting user info:", error);
+              Alert.alert(
+                "Error",
+                "Failed to reset user info. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -123,13 +161,22 @@ export default function HomeScreen() {
           {environment === "dev" && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Testing Tools</Text>
-              <TouchableOpacity
-                style={styles.testButton}
-                onPress={handleResetCategories}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.testButtonText}>Reset Categories</Text>
-              </TouchableOpacity>
+              <View style={styles.testButtonContainer}>
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={handleResetCategories}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.testButtonText}>Reset Categories</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={handleResetUserInfo}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.testButtonText}>Reset User Info</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -237,5 +284,8 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  testButtonContainer: {
+    gap: 10,
   },
 });

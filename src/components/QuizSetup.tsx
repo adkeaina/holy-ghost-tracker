@@ -107,8 +107,6 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
       // Try real AI quiz generation first
       const result = await generateQuiz(quizInput, questionCount);
 
-      console.log("Quiz generation result:", result);
-
       let questionsToUse: QuizQuestion[];
 
       if ("questions" in result && result.questions.length > 0) {

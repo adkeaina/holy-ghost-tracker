@@ -9,6 +9,7 @@ import {
 const IMPRESSIONS_KEY = "impressions";
 const PROFILE_KEY = "profile";
 const CATEGORIES_KEY = "categories";
+const ONBOARDING_KEY = "hasOnboarded";
 
 // Spiritual Impressions CRUD operations
 export const saveImpression = async (
@@ -95,6 +96,58 @@ export const getLastImpression =
     }
   };
 
+// Onboarding operations
+export const getHasOnboarded = async (): Promise<boolean> => {
+  try {
+    const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
+    return hasOnboarded === "true";
+  } catch (error) {
+    console.error("Error getting onboarding status:", error);
+    return false;
+  }
+};
+
+export const setHasOnboarded = async (hasOnboarded: boolean): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_KEY, hasOnboarded.toString());
+  } catch (error) {
+    console.error("Error setting onboarding status:", error);
+    throw error;
+  }
+};
+
+export const completeOnboarding = async (
+  name: string,
+  email: string
+): Promise<void> => {
+  try {
+    const profile: UserProfile = {
+      name,
+      email,
+      notificationSettings: {
+        enabled: false,
+        intervalDays: 7,
+      },
+    };
+
+    await saveUserProfile(profile);
+    await setHasOnboarded(true);
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    throw error;
+  }
+};
+
+export const resetUserInfo = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(PROFILE_KEY);
+    await AsyncStorage.removeItem(ONBOARDING_KEY);
+  } catch (error) {
+    console.error("Error resetting user info:", error);
+    throw error;
+  }
+};
+
 // Profile operations
 export const getUserProfile = async (): Promise<UserProfile> => {
   try {
@@ -103,10 +156,10 @@ export const getUserProfile = async (): Promise<UserProfile> => {
       return JSON.parse(profileJson);
     }
 
-    // Return default profile if none exists
+    // Return default profile if none exists (this should only happen if onboarding was skipped)
     const defaultProfile: UserProfile = {
-      name: "Adam Aina",
-      email: "adkeaina@gmail.com",
+      name: "User",
+      email: "user@example.com",
       notificationSettings: {
         enabled: false,
         intervalDays: 7,
@@ -119,8 +172,8 @@ export const getUserProfile = async (): Promise<UserProfile> => {
     console.error("Error getting user profile:", error);
     // Return default profile on error
     return {
-      name: "John Doe",
-      email: "john.doe@example.com",
+      name: "User",
+      email: "user@example.com",
       notificationSettings: {
         enabled: false,
         intervalDays: 7,
