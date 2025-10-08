@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SpiritualImpression } from "../types";
 import {
@@ -22,6 +23,9 @@ import {
 import { formatTimeDuration, getTimeSinceLastImpression } from "../utils/time";
 import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
+import BackgroundGradient from "../components/BackgroundGradient";
+import GlassyCard from "../components/GlassyCard";
+import { useTheme } from "../theme";
 
 const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
@@ -31,6 +35,9 @@ export default function HomeScreen() {
   const [timeSince, setTimeSince] = useState<number>(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const [expandedImpression, setExpandedImpression] = useState<boolean>(false);
+  const [testingToolsExpanded, setTestingToolsExpanded] =
+    useState<boolean>(false);
+  const { theme } = useTheme();
 
   // Load last impression when screen focuses
   useFocusEffect(
@@ -136,88 +143,122 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps='handled'
-          showsVerticalScrollIndicator={false}
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Holy Ghost Tracker</Text>
-            <Text style={styles.subtitle}>
-              Track your spiritual impressions
-            </Text>
-          </View>
-
-          {/* Test Section */}
-          {environment === "dev" && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Testing Tools</Text>
-              <View style={styles.testButtonContainer}>
-                <TouchableOpacity
-                  style={styles.testButton}
-                  onPress={handleResetCategories}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.testButtonText}>Reset Categories</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.testButton}
-                  onPress={handleResetUserInfo}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.testButtonText}>Reset User Info</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Last Impression */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Last Spiritual Impression</Text>
-            <Impression
-              impression={lastImpression}
-              expanded={expandedImpression}
-              onPress={() => setExpandedImpression((prev) => !prev)}
-            />
-          </View>
-
-          {/* Stopwatch */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Time Since Last Impression</Text>
-            <View style={styles.stopwatchCard}>
-              <Text style={styles.stopwatchTime}>
-                {lastImpression ? formatTimeDuration(timeSince) : "0s"}
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps='handled'
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>
+                Holy Ghost Tracker
+              </Text>
+              <Text
+                style={[styles.subtitle, { color: theme.colors.textMuted }]}
+              >
+                Track your spiritual impressions
               </Text>
             </View>
-          </View>
 
-          {/* Add New Impression Form */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Add New Impression</Text>
-            <NewImpressionForm
-              onSuccess={loadLastImpression}
-              onDescriptionFocus={scrollToBottom}
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {/* Test Section */}
+            {environment === "dev" && (
+              <View style={styles.section}>
+                <TouchableOpacity
+                  style={styles.sectionHeader}
+                  onPress={() => setTestingToolsExpanded(!testingToolsExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[styles.sectionTitle, { color: theme.colors.text }]}
+                  >
+                    Testing Tools
+                  </Text>
+                  <Ionicons
+                    name={
+                      testingToolsExpanded ? "chevron-down" : "chevron-forward"
+                    }
+                    size={24}
+                    color={theme.colors.text}
+                  />
+                </TouchableOpacity>
+                {testingToolsExpanded && (
+                  <View style={styles.testButtonContainer}>
+                    <TouchableOpacity
+                      style={styles.testButton}
+                      onPress={handleResetCategories}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.testButtonText}>
+                        Reset Categories
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.testButton}
+                      onPress={handleResetUserInfo}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.testButtonText}>Reset User Info</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Last Impression */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Last Spiritual Impression
+              </Text>
+              <Impression
+                impression={lastImpression}
+                expanded={expandedImpression}
+                onPress={() => setExpandedImpression((prev) => !prev)}
+              />
+            </View>
+
+            {/* Stopwatch */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Time Since Last Impression
+              </Text>
+              <GlassyCard style={styles.stopwatchCard}>
+                <Text
+                  style={[styles.stopwatchTime, { color: theme.colors.text }]}
+                >
+                  {lastImpression ? formatTimeDuration(timeSince) : "0s"}
+                </Text>
+              </GlassyCard>
+            </View>
+
+            {/* Add New Impression Form */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Add New Impression
+              </Text>
+              <NewImpressionForm
+                onSuccess={loadLastImpression}
+                onDescriptionFocus={scrollToBottom}
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -235,12 +276,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: "#7f8c8d",
   },
   section: {
     marginBottom: 25,
@@ -248,28 +287,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 15,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   stopwatchCard: {
-    backgroundColor: "#3498db",
-    padding: 25,
-    borderRadius: 15,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   stopwatchTime: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "white",
     fontFamily: "monospace",
   },
   testButton: {

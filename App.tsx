@@ -17,12 +17,15 @@ import {
   getHasOnboarded,
   completeOnboarding,
 } from "./src/utils/storage";
+import { ThemeProvider, useTheme } from "./src/theme";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-export default function App() {
+// Main App Content Component
+function AppContent() {
   const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
 
   // Initialize app on startup
   useEffect(() => {
@@ -59,10 +62,19 @@ export default function App() {
   if (isLoading) {
     return (
       <SafeAreaProvider>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+        <View
+          style={[
+            styles.loadingContainer,
+            { backgroundColor: theme.colors.background },
+          ]}
+        >
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+            Loading...
+          </Text>
         </View>
-        <StatusBar style='auto' />
+        <StatusBar
+          style={theme.colors.background === "#FAFAFA" ? "dark" : "light"}
+        />
       </SafeAreaProvider>
     );
   }
@@ -72,7 +84,9 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <OnboardingScreen onComplete={handleOnboardingComplete} />
-        <StatusBar style='auto' />
+        <StatusBar
+          style={theme.colors.background === "#FAFAFA" ? "dark" : "light"}
+        />
       </SafeAreaProvider>
     );
   }
@@ -84,15 +98,15 @@ export default function App() {
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: "white",
+              backgroundColor: theme.colors.tabBarBackground,
               borderTopWidth: 1,
-              borderTopColor: "#e1e8ed",
+              borderTopColor: theme.colors.tabBarBorder,
               height: 90,
               paddingBottom: 20,
               paddingTop: 10,
             },
-            tabBarActiveTintColor: "#3498db",
-            tabBarInactiveTintColor: "#95a5a6",
+            tabBarActiveTintColor: theme.colors.tabBarActive,
+            tabBarInactiveTintColor: theme.colors.tabBarInactive,
             tabBarLabelStyle: {
               fontSize: 12,
               fontWeight: "600",
@@ -140,9 +154,19 @@ export default function App() {
             }}
           />
         </Tab.Navigator>
-        <StatusBar style='auto' />
+        <StatusBar
+          style={theme.colors.background === "#FAFAFA" ? "dark" : "light"}
+        />
       </NavigationContainer>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
@@ -151,11 +175,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     fontSize: 18,
-    color: "#7f8c8d",
     fontWeight: "500",
   },
 });

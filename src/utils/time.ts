@@ -1,20 +1,17 @@
 // Time utility functions for the stopwatch and formatting
 
 export const formatTimeDuration = (milliseconds: number): string => {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const days = Math.floor(totalSeconds / (24 * 3600));
-  const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  const totalMinutes = Math.floor(milliseconds / (1000 * 60));
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    return `${days}d ${hours}h ${minutes}m`;
   } else if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
+    return `${hours}h ${minutes}m`;
   } else {
-    return `${seconds}s`;
+    return `${minutes}m`;
   }
 };
 

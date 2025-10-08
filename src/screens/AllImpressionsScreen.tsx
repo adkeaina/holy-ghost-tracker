@@ -23,6 +23,8 @@ import {
 import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
 import FilterModal, { FilterOptions } from "../components/FilterModal";
+import BackgroundGradient from "../components/BackgroundGradient";
+import { useTheme } from "../theme";
 
 export default function AllImpressionsScreen() {
   const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
@@ -37,6 +39,7 @@ export default function AllImpressionsScreen() {
     dateRange: { type: "all" },
     description: "",
   });
+  const { theme } = useTheme();
 
   useFocusEffect(
     useCallback(() => {
@@ -266,137 +269,201 @@ export default function AllImpressionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>All Impressions 🕊️</Text>
-            <Text style={styles.subtitle}>
-              {filteredImpressions.length} of {impressions.length} impression
-              {impressions.length !== 1 ? "s" : ""}
-              {hasActiveFilters() && " (filtered)"}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              hasActiveFilters() && styles.filterButtonActive,
-            ]}
-            onPress={handleFilterPress}
-          >
-            <Ionicons
-              name='filter'
-              size={24}
-              color={hasActiveFilters() ? "#3498db" : "#7f8c8d"}
-            />
-            {hasActiveFilters() && <View style={styles.filterIndicator} />}
-          </TouchableOpacity>
-        </View>
-      </View>
-      {impressions.length > 0 ? (
-        filteredImpressions.length > 0 ? (
-          <FlatList
-            data={filteredImpressions}
-            keyExtractor={(item) => item.id}
-            renderItem={renderImpression}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No matching impressions</Text>
-            <Text style={styles.emptySubtext}>
-              Try adjusting your filters to see more results
-            </Text>
-            <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={() =>
-                setFilters({
-                  categories: [],
-                  dateRange: { type: "all" },
-                  description: "",
-                })
-              }
-            >
-              <Text style={styles.clearFiltersButtonText}>Clear Filters</Text>
-            </TouchableOpacity>
-          </View>
-        )
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No spiritual impressions yet</Text>
-          <Text style={styles.emptySubtext}>
-            Start tracking your spiritual experiences from the Home tab
-          </Text>
-        </View>
-      )}
-      {/* Edit Modal */}
-      <Modal
-        animationType='slide'
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={closeModal}
-        >
-          <KeyboardAvoidingView
-            style={styles.keyboardAvoidingView}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-          >
-            <TouchableOpacity
-              style={styles.modalContent}
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-            >
-              {/* Close X button */}
-              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-
-              {/* Delete button */}
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>
+                All Impressions 🕊️
+              </Text>
+              <Text
+                style={[styles.subtitle, { color: theme.colors.textMuted }]}
               >
-                <Ionicons name='trash-outline' size={20} color='red' />
-              </TouchableOpacity>
-
-              <Text style={styles.modalTitle}>Edit Impression</Text>
-
-              {selectedImpression && (
-                <NewImpressionForm
-                  isEdit={true}
-                  initialDescription={selectedImpression.description}
-                  initialDateTime={selectedImpression.dateTime}
-                  initialCategories={selectedImpression.categories}
-                  onUpdate={handleUpdate}
-                  onSuccess={() => {}}
+                {filteredImpressions.length} of {impressions.length} impression
+                {impressions.length !== 1 ? "s" : ""}
+                {hasActiveFilters() && " (filtered)"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                { backgroundColor: theme.colors.surface },
+                hasActiveFilters() && { backgroundColor: theme.colors.accent },
+              ]}
+              onPress={handleFilterPress}
+            >
+              <Ionicons
+                name='filter'
+                size={24}
+                color={
+                  hasActiveFilters()
+                    ? theme.colors.primary
+                    : theme.colors.textMuted
+                }
+              />
+              {hasActiveFilters() && (
+                <View
+                  style={[
+                    styles.filterIndicator,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
                 />
               )}
             </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </TouchableOpacity>
-      </Modal>
+          </View>
+        </View>
+        {impressions.length > 0 ? (
+          filteredImpressions.length > 0 ? (
+            <FlatList
+              data={filteredImpressions}
+              keyExtractor={(item) => item.id}
+              renderItem={renderImpression}
+              contentContainerStyle={styles.listContainer}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text
+                style={[styles.emptyText, { color: theme.colors.textMuted }]}
+              >
+                No matching impressions
+              </Text>
+              <Text
+                style={[styles.emptySubtext, { color: theme.colors.textMuted }]}
+              >
+                Try adjusting your filters to see more results
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.clearFiltersButton,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+                onPress={() =>
+                  setFilters({
+                    categories: [],
+                    dateRange: { type: "all" },
+                    description: "",
+                  })
+                }
+              >
+                <Text
+                  style={[
+                    styles.clearFiltersButtonText,
+                    { color: theme.colors.buttonText },
+                  ]}
+                >
+                  Clear Filters
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+              No spiritual impressions yet
+            </Text>
+            <Text
+              style={[styles.emptySubtext, { color: theme.colors.textMuted }]}
+            >
+              Start tracking your spiritual experiences from the Home tab
+            </Text>
+          </View>
+        )}
+        {/* Edit Modal */}
+        <Modal
+          animationType='slide'
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={closeModal}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={closeModal}
+          >
+            <KeyboardAvoidingView
+              style={styles.keyboardAvoidingView}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+            >
+              <TouchableOpacity
+                style={styles.modalContent}
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+              >
+                {/* Close X button */}
+                <TouchableOpacity
+                  style={[
+                    styles.closeButton,
+                    { backgroundColor: theme.colors.surface },
+                  ]}
+                  onPress={closeModal}
+                >
+                  <Text
+                    style={[
+                      styles.closeButtonText,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    ✕
+                  </Text>
+                </TouchableOpacity>
 
-      {/* Filter Modal */}
-      <FilterModal
-        visible={filterModalVisible}
-        onClose={handleFilterClose}
-        onApply={handleFilterApply}
-        initialFilters={filters}
-      />
-    </SafeAreaView>
+                {/* Delete button */}
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={handleDelete}
+                >
+                  <Ionicons
+                    name='trash-outline'
+                    size={20}
+                    color={theme.colors.error}
+                  />
+                </TouchableOpacity>
+
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    {
+                      color: theme.colors.text,
+                      backgroundColor: theme.colors.surface,
+                    },
+                  ]}
+                >
+                  Edit Impression
+                </Text>
+
+                {selectedImpression && (
+                  <NewImpressionForm
+                    isEdit={true}
+                    initialDescription={selectedImpression.description}
+                    initialDateTime={selectedImpression.dateTime}
+                    initialCategories={selectedImpression.categories}
+                    onUpdate={handleUpdate}
+                    onSuccess={() => {}}
+                  />
+                )}
+              </TouchableOpacity>
+            </KeyboardAvoidingView>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Filter Modal */}
+        <FilterModal
+          visible={filterModalVisible}
+          onClose={handleFilterClose}
+          onApply={handleFilterApply}
+          initialFilters={filters}
+        />
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   header: {
     padding: 20,
@@ -414,12 +481,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: "#7f8c8d",
   },
   listContainer: {
     padding: 20,
@@ -437,13 +502,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 24,
     fontWeight: "600",
-    color: "#95a5a6",
     marginBottom: 10,
     textAlign: "center",
   },
   emptySubtext: {
     fontSize: 16,
-    color: "#bdc3c7",
     textAlign: "center",
     lineHeight: 22,
   },
@@ -467,9 +530,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 28,
-    backgroundColor: "white",
     fontWeight: "bold",
-    color: "#2c3e50",
     textAlign: "center",
     marginBottom: 20,
     padding: 10,
@@ -483,13 +544,11 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   closeButtonText: {
     fontSize: 18,
-    color: "7f8c8d",
     fontWeight: "bold",
   },
   deleteButton: {
@@ -506,7 +565,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#ecf0f1",
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -521,17 +579,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#3498db",
   },
   clearFiltersButton: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#3498db",
     borderRadius: 8,
   },
   clearFiltersButtonText: {
-    color: "white",
     fontSize: 16,
     fontWeight: "600",
   },

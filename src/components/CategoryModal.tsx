@@ -13,6 +13,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { ImpressionCategory } from "../types";
 import { saveCategory, updateCategory, deleteCategory } from "../utils/storage";
+import { useTheme } from "../theme";
 
 interface CategoryModalProps {
   visible: boolean;
@@ -61,6 +62,7 @@ export default function CategoryModal({
   const [selectedColor, setSelectedColor] =
     useState<ImpressionCategory["color"]>("blue");
   const [isLoading, setIsLoading] = useState(false);
+  const { theme } = useTheme();
 
   const isEditMode = !!category;
   const isNotRemovable = category?.notRemovable ?? false;
@@ -161,12 +163,26 @@ export default function CategoryModal({
       presentationStyle='pageSheet'
       onRequestClose={handleClose}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.colors.surface,
+              borderBottomColor: theme.colors.border,
+            },
+          ]}
+        >
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Cancel</Text>
+            <Text
+              style={[styles.closeButtonText, { color: theme.colors.primary }]}
+            >
+              Cancel
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>
             {isEditMode ? "Edit Category" : "New Category"}
           </Text>
           <View style={styles.placeholder} />
@@ -174,28 +190,44 @@ export default function CategoryModal({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Category Name</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Category Name
+            </Text>
             <TextInput
               style={[
                 styles.textInput,
-                isNotRemovable && styles.textInputDisabled,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+                isNotRemovable && {
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.textMuted,
+                },
               ]}
               value={name}
               onChangeText={isNotRemovable ? undefined : setName}
               placeholder='Enter category name...'
+              placeholderTextColor={theme.colors.textMuted}
               maxLength={30}
               autoFocus={!isEditMode && !isNotRemovable}
               editable={!isNotRemovable}
             />
             {isNotRemovable && (
-              <Text style={styles.disabledText}>
+              <Text
+                style={[styles.disabledText, { color: theme.colors.textMuted }]}
+              >
                 This is a default category and cannot be renamed.
               </Text>
             )}
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Color</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Color
+            </Text>
             <View style={styles.colorGrid}>
               {COLORS.map((color) => (
                 <TouchableOpacity
@@ -216,12 +248,18 @@ export default function CategoryModal({
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.colorLabel}>{COLOR_LABELS[selectedColor]}</Text>
+            <Text
+              style={[styles.colorLabel, { color: theme.colors.textMuted }]}
+            >
+              {COLOR_LABELS[selectedColor]}
+            </Text>
           </View>
 
           {/* Preview */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Preview</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Preview
+            </Text>
             <View style={styles.previewContainer}>
               <View
                 style={[
@@ -240,29 +278,51 @@ export default function CategoryModal({
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: theme.colors.surface,
+              borderTopColor: theme.colors.border,
+            },
+          ]}
+        >
           {isEditMode && !isNotRemovable && (
             <TouchableOpacity
               style={[
                 styles.deleteButton,
-                isLoading && styles.deleteButtonDisabled,
+                { backgroundColor: theme.colors.error },
+                isLoading && { backgroundColor: theme.colors.textMuted },
               ]}
               onPress={handleDelete}
               disabled={isLoading}
             >
-              <Text style={styles.deleteButtonText}>Delete</Text>
+              <Text
+                style={[
+                  styles.deleteButtonText,
+                  { color: theme.colors.buttonText },
+                ]}
+              >
+                Delete
+              </Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
             style={[
               styles.saveButton,
-              isLoading && styles.saveButtonDisabled,
+              { backgroundColor: theme.colors.success },
+              isLoading && { backgroundColor: theme.colors.textMuted },
               isEditMode && isNotRemovable && styles.saveButtonFullWidth,
             ]}
             onPress={handleSave}
             disabled={isLoading}
           >
-            <Text style={styles.saveButtonText}>
+            <Text
+              style={[
+                styles.saveButtonText,
+                { color: theme.colors.buttonText },
+              ]}
+            >
               {isLoading ? "Saving..." : isEditMode ? "Update" : "Create"}
             </Text>
           </TouchableOpacity>
@@ -277,7 +337,6 @@ const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     flexDirection: "row",
@@ -285,21 +344,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 20,
     paddingTop: 60,
-    backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: "#ecf0f1",
   },
   closeButton: {
     padding: 5,
   },
   closeButtonText: {
-    color: "#3498db",
     fontSize: 16,
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2c3e50",
   },
   placeholder: {
     width: 60,
@@ -314,16 +369,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#bdc3c7",
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
-    backgroundColor: "white",
   },
   textInputDisabled: {
     backgroundColor: "#f8f9fa",
@@ -332,7 +384,6 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     fontSize: 12,
-    color: "#7f8c8d",
     fontStyle: "italic",
     marginTop: 5,
   },
@@ -361,7 +412,6 @@ const styles = StyleSheet.create({
   colorLabel: {
     marginTop: 10,
     fontSize: 14,
-    color: "#7f8c8d",
     textAlign: "center",
   },
   previewContainer: {
@@ -382,14 +432,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 20,
     paddingBottom: 40,
-    backgroundColor: "white",
     borderTopWidth: 1,
-    borderTopColor: "#ecf0f1",
     gap: 10,
   },
   deleteButton: {
     flex: 1,
-    backgroundColor: "#e74c3c",
     padding: 18,
     borderRadius: 10,
     alignItems: "center",
@@ -398,13 +445,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#95a5a6",
   },
   deleteButtonText: {
-    color: "white",
     fontSize: 16,
     fontWeight: "600",
   },
   saveButton: {
     flex: 2,
-    backgroundColor: "#27ae60",
     padding: 18,
     borderRadius: 10,
     alignItems: "center",
@@ -416,7 +461,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#95a5a6",
   },
   saveButtonText: {
-    color: "white",
     fontSize: 16,
     fontWeight: "600",
   },
