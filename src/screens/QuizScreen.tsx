@@ -7,7 +7,6 @@ import QuizSetup from "../components/QuizSetup";
 import QuizQuestionScreen from "../components/QuizQuestionScreen";
 import QuizResults from "../components/QuizResults";
 import BackgroundGradient from "../components/BackgroundGradient";
-import { useTheme } from "../theme";
 
 export default function QuizScreen() {
   const [quizState, setQuizState] = useState<"setup" | "question" | "result">(
@@ -52,7 +51,7 @@ export default function QuizScreen() {
 
   return (
     <BackgroundGradient>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         {quizState === "setup" && (
           <QuizSetup onQuizGenerated={handleQuizGenerated} />
         )}

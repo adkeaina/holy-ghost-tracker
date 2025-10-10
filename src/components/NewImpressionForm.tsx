@@ -6,13 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Platform,
   Keyboard,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { saveImpression } from "../utils/storage";
-import { ImpressionCategory } from "../types";
 import CategoryList from "./CategoryList";
 import GlassyCard from "./GlassyCard";
 import { useTheme } from "../theme";
@@ -179,9 +177,7 @@ export default function NewImpressionForm({
             style={[
               styles.textInput,
               {
-                borderColor: theme.colors.border,
                 color: theme.colors.text,
-                backgroundColor: theme.colors.surface,
               },
             ]}
             value={description}
@@ -204,7 +200,7 @@ export default function NewImpressionForm({
         <TouchableOpacity
           style={[
             styles.submitButton,
-            { backgroundColor: theme.colors.success },
+            { backgroundColor: theme.colors.buttonPrimary },
             isLoading && { backgroundColor: theme.colors.textMuted },
           ]}
           onPress={handleSubmit}
