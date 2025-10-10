@@ -212,13 +212,13 @@ const DEFAULT_CATEGORIES: ImpressionCategory[] = [
   {
     id: 1,
     name: "Church",
-    color: "blue",
+    color: "brown",
     notRemovable: true,
   },
   {
     id: 2,
-    name: "BYU",
-    color: "brown",
+    name: "Personal",
+    color: "blue",
     notRemovable: true,
   },
 ];
