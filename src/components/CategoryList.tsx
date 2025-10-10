@@ -11,6 +11,7 @@ import { ImpressionCategory } from "../types";
 import { getCategories } from "../utils/storage";
 import CategoryChip from "./CategoryChip";
 import CategoryModal from "./CategoryModal";
+import { useTheme } from "../theme";
 
 interface CategoryListProps {
   readonly?: boolean;
@@ -30,6 +31,7 @@ export default function CategoryList({
   const [editingCategory, setEditingCategory] = useState<
     ImpressionCategory | undefined
   >();
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadCategories();
@@ -86,7 +88,11 @@ export default function CategoryList({
 
   return (
     <View style={[styles.container, style]}>
-      {!readonly && <Text style={styles.label}>Categories</Text>}
+      {!readonly && (
+        <Text style={[styles.label, { color: theme.colors.text }]}>
+          Categories
+        </Text>
+      )}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -104,8 +110,15 @@ export default function CategoryList({
 
         {/* Add Category Button */}
         {!readonly && (
-          <TouchableOpacity style={styles.addButton} onPress={handleAddPress}>
-            <Text style={styles.addButtonText}>+</Text>
+          <TouchableOpacity
+            style={[styles.addButton, { borderColor: theme.colors.border }]}
+            onPress={handleAddPress}
+          >
+            <Text
+              style={[styles.addButtonText, { color: theme.colors.textMuted }]}
+            >
+              +
+            </Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -127,7 +140,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 8,
   },
   scrollContent: {
@@ -139,7 +151,6 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: "#bdc3c7",
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
@@ -147,7 +158,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addButtonText: {
-    color: "#7f8c8d",
     fontSize: 18,
     fontWeight: "bold",
   },

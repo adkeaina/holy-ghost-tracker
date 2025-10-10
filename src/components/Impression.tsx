@@ -5,6 +5,8 @@ import { SpiritualImpression, ImpressionCategory } from "../types";
 import { formatDateTime } from "../utils/time";
 import { resolveCategoryIds } from "../utils/storage";
 import CategoryChip from "./CategoryChip";
+import GlassyCard from "./GlassyCard";
+import { useTheme } from "../theme";
 
 interface ImpressionProps {
   impression?: SpiritualImpression | null;
@@ -28,6 +30,7 @@ export default function Impression({
   const [resolvedCategories, setResolvedCategories] = useState<
     ImpressionCategory[]
   >([]);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -43,9 +46,13 @@ export default function Impression({
   }, [impression?.categories]);
   if (!impression && showEmptyState) {
     return (
-      <View style={styles.impressionCard}>
-        <Text style={styles.noImpressionText}>{emptyStateText}</Text>
-      </View>
+      <GlassyCard style={styles.impressionCard}>
+        <Text
+          style={[styles.noImpressionText, { color: theme.colors.textMuted }]}
+        >
+          {emptyStateText}
+        </Text>
+      </GlassyCard>
     );
   }
 
@@ -57,7 +64,6 @@ export default function Impression({
 
   return (
     <CardComponent
-      style={styles.impressionCard}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.(impression);
@@ -68,50 +74,49 @@ export default function Impression({
       }}
       activeOpacity={activeOpacity}
     >
-      <Text
-        style={styles.impressionDescription}
-        numberOfLines={expanded ? undefined : 3}
-      >
-        {impression.description}
-      </Text>
+      <GlassyCard style={styles.impressionCard}>
+        <View style={styles.contentContainer}>
+          <Text
+            style={[styles.impressionDescription, { color: theme.colors.text }]}
+            numberOfLines={expanded ? undefined : 3}
+          >
+            {impression.description}
+          </Text>
 
-      {resolvedCategories.length > 0 && (
-        <View style={styles.categoriesContainer}>
-          {resolvedCategories.map((category) => (
-            <CategoryChip
-              key={category.id}
-              category={category}
-              size='small'
-              disabled
-            />
-          ))}
+          {resolvedCategories.length > 0 && (
+            <View style={styles.categoriesContainer}>
+              {resolvedCategories.map((category) => (
+                <CategoryChip
+                  key={category.id}
+                  category={category}
+                  size='small'
+                  disabled
+                />
+              ))}
+            </View>
+          )}
+
+          <Text
+            style={[styles.impressionDate, { color: theme.colors.textMuted }]}
+          >
+            {formatDateTime(impression.dateTime)}
+          </Text>
         </View>
-      )}
-
-      <Text style={styles.impressionDate}>
-        {formatDateTime(impression.dateTime)}
-      </Text>
+      </GlassyCard>
     </CardComponent>
   );
 }
 
 const styles = StyleSheet.create({
   impressionCard: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  contentContainer: {
+    width: "100%",
   },
   impressionDescription: {
     fontSize: 16,
-    color: "#2c3e50",
     lineHeight: 22,
     marginBottom: 10,
   },
@@ -123,12 +128,10 @@ const styles = StyleSheet.create({
   },
   impressionDate: {
     fontSize: 14,
-    color: "#7f8c8d",
     fontStyle: "italic",
   },
   noImpressionText: {
     fontSize: 16,
-    color: "#95a5a6",
     fontStyle: "italic",
     textAlign: "center",
   },

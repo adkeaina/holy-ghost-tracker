@@ -6,14 +6,14 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Platform,
   Keyboard,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { saveImpression } from "../utils/storage";
-import { ImpressionCategory } from "../types";
 import CategoryList from "./CategoryList";
+import GlassyCard from "./GlassyCard";
+import { useTheme } from "../theme";
 
 interface NewImpressionFormProps {
   onSuccess?: () => void;
@@ -47,6 +47,7 @@ export default function NewImpressionForm({
   const [selectedCategories, setSelectedCategories] =
     useState<number[]>(initialCategories);
   const [isLoading, setIsLoading] = useState(false);
+  const { theme } = useTheme();
 
   // Set default date/time to current date/time for new impressions
   useEffect(() => {
@@ -130,81 +131,104 @@ export default function NewImpressionForm({
   };
 
   return (
-    <View style={styles.form}>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Date & Time</Text>
-        <View style={styles.dateTimeContainer}>
-          <DateTimePicker
-            testID='dateTimePicker'
-            value={selectedDate}
-            mode='datetime'
-            display='default'
-            maximumDate={new Date()}
-            onChange={handleDateTimeChange}
-            style={styles.picker}
-          />
-          {Math.abs(selectedDate.getTime() - new Date().getTime()) > 60000 &&
-            !initialDateTime && (
-              <TouchableOpacity
-                style={styles.nowButton}
-                onPress={setToCurrentDateTime}
-              >
-                <Text style={styles.nowButtonText}>Now</Text>
-              </TouchableOpacity>
-            )}
+    <GlassyCard style={styles.form}>
+      <View style={styles.formContent}>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.colors.text }]}>
+            Date & Time
+          </Text>
+          <View style={styles.dateTimeContainer}>
+            <DateTimePicker
+              testID='dateTimePicker'
+              value={selectedDate}
+              mode='datetime'
+              display='default'
+              maximumDate={new Date()}
+              onChange={handleDateTimeChange}
+              style={styles.picker}
+            />
+            {Math.abs(selectedDate.getTime() - new Date().getTime()) > 60000 &&
+              !initialDateTime && (
+                <TouchableOpacity
+                  style={[
+                    styles.nowButton,
+                    { borderColor: theme.colors.border },
+                  ]}
+                  onPress={setToCurrentDateTime}
+                >
+                  <Text
+                    style={[
+                      styles.nowButtonText,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    Now
+                  </Text>
+                </TouchableOpacity>
+              )}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={styles.textInput}
-          value={description}
-          onChangeText={setDescription}
-          onFocus={onDescriptionFocus}
-          placeholder='Describe your spiritual impression...'
-          multiline
-          numberOfLines={4}
-          textAlignVertical='top'
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.colors.text }]}>
+            Description
+          </Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              {
+                color: theme.colors.text,
+              },
+            ]}
+            value={description}
+            onChangeText={setDescription}
+            onFocus={onDescriptionFocus}
+            placeholder='Describe your spiritual impression...'
+            placeholderTextColor={theme.colors.textMuted}
+            multiline
+            numberOfLines={4}
+            textAlignVertical='top'
+          />
+        </View>
+
+        <CategoryList
+          readonly={false}
+          selectedCategories={selectedCategories}
+          onSelectionChange={setSelectedCategories}
         />
-      </View>
 
-      <CategoryList
-        readonly={false}
-        selectedCategories={selectedCategories}
-        onSelectionChange={setSelectedCategories}
-      />
-
-      <TouchableOpacity
-        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
-        onPress={handleSubmit}
-        disabled={isLoading}
-      >
-        <Text
-          style={styles.submitButtonText}
-          numberOfLines={1}
-          ellipsizeMode='tail'
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            { backgroundColor: theme.colors.buttonPrimary },
+            isLoading && { backgroundColor: theme.colors.textMuted },
+          ]}
+          onPress={handleSubmit}
+          disabled={isLoading}
         >
-          {isLoading ? "Saving..." : isEdit ? "Update" : "Save Impression"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+          <Text
+            style={[
+              styles.submitButtonText,
+              { color: theme.colors.buttonText },
+            ]}
+            numberOfLines={1}
+            ellipsizeMode='tail'
+          >
+            {isLoading ? "Saving..." : isEdit ? "Update" : "Save Impression"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </GlassyCard>
   );
 }
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  formContent: {
+    width: "100%",
   },
   inputContainer: {
     marginBottom: 20,
@@ -212,7 +236,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 8,
   },
   dateTimeContainer: {
@@ -226,29 +249,23 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   nowButton: {
-    backgroundColor: "#f8f9fa",
     borderWidth: 1,
-    borderColor: "#bdc3c7",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
   },
   nowButtonText: {
-    color: "#7f8c8d",
     fontSize: 12,
     fontWeight: "500",
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#bdc3c7",
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
-    backgroundColor: "#f8f9fa",
     minHeight: 100,
   },
   submitButton: {
-    backgroundColor: "#27ae60",
     padding: 18,
     borderRadius: 10,
     alignItems: "center",
@@ -261,7 +278,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#95a5a6",
   },
   submitButtonText: {
-    color: "white",
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",

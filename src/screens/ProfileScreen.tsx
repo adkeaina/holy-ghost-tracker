@@ -22,6 +22,10 @@ import {
   scheduleNotification,
   requestNotificationPermissions,
 } from "../utils/notifications";
+import BackgroundGradient from "../components/BackgroundGradient";
+import GlassyCard from "../components/GlassyCard";
+import FeedbackFAB from "../components/FeedbackFAB";
+import { useTheme } from "../theme";
 
 const NOTIFICATION_INTERVALS = [
   { label: "1 Day", value: 1 as const },
@@ -36,6 +40,7 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [editingEmail, setEditingEmail] = useState("");
+  const { theme, themeMode, toggleTheme } = useTheme();
 
   useFocusEffect(
     useCallback(() => {
@@ -208,143 +213,242 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading profile...</Text>
-        </View>
-      </SafeAreaView>
+      <BackgroundGradient>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+              Loading profile...
+            </Text>
+          </View>
+        </SafeAreaView>
+      </BackgroundGradient>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-
-        {/* User Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>User Information</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name</Text>
-              <TextInput
-                style={styles.infoValue}
-                value={editingName}
-                onChangeText={setEditingName}
-                onBlur={handleNameBlur}
-                placeholder='Enter your name'
-                placeholderTextColor='#bdc3c7'
-                autoCapitalize='words'
-                autoCorrect={false}
-                returnKeyType='next'
-                editable={!isLoading}
-              />
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <TextInput
-                style={styles.infoValue}
-                value={editingEmail}
-                onChangeText={setEditingEmail}
-                onBlur={handleEmailBlur}
-                placeholder='Enter your email'
-                placeholderTextColor='#bdc3c7'
-                keyboardType='email-address'
-                autoCapitalize='none'
-                autoCorrect={false}
-                returnKeyType='done'
-                editable={!isLoading}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Notification Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Preferences</Text>
-          <View style={styles.card}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Enable Reminders</Text>
-                <Text style={styles.settingDescription}>
-                  Receive notifications when you haven't logged a spiritual
-                  impression
-                </Text>
-              </View>
-              <Switch
-                value={profile.notificationSettings.enabled}
-                onValueChange={handleNotificationToggle}
-                disabled={isLoading}
-                trackColor={{ false: "#bdc3c7", true: "#3498db" }}
-                thumbColor={
-                  profile.notificationSettings.enabled ? "#2980b9" : "#95a5a6"
-                }
-              />
-            </View>
-
-            {profile.notificationSettings.enabled && (
-              <View style={styles.intervalSection}>
-                <Text style={styles.intervalTitle}>Reminder Frequency</Text>
-                <Text style={styles.intervalDescription}>
-                  How often would you like to receive reminders?
-                </Text>
-
-                {NOTIFICATION_INTERVALS.map((interval) => (
-                  <TouchableOpacity
-                    key={interval.value}
-                    style={[
-                      styles.intervalOption,
-                      profile.notificationSettings.intervalDays ===
-                        interval.value && styles.intervalOptionSelected,
-                    ]}
-                    onPress={() => handleIntervalChange(interval.value)}
-                    disabled={isLoading}
-                  >
-                    <Text
-                      style={[
-                        styles.intervalOptionText,
-                        profile.notificationSettings.intervalDays ===
-                          interval.value && styles.intervalOptionTextSelected,
-                      ]}
-                    >
-                      {interval.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* App Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.card}>
-            <Text style={styles.aboutText}>
-              Holy Ghost Tracker helps you remember and track the spiritual
-              impressions in your life. As a member of The Church of Jesus
-              Christ of Latter-day Saints, keeping track of when you feel the
-              Holy Ghost can strengthen your testimony and help you recognize
-              the Spirit's influence more readily.
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              Profile
             </Text>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
           </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+          {/* User Info */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              User Information
+            </Text>
+            <GlassyCard style={styles.userInfoCard}>
+              <View style={styles.userInfoContent}>
+                <View style={styles.infoRow}>
+                  <Text
+                    style={[
+                      styles.infoLabel,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    Name
+                  </Text>
+                  <TextInput
+                    style={[styles.infoValue, { color: theme.colors.text }]}
+                    value={editingName}
+                    onChangeText={setEditingName}
+                    onBlur={handleNameBlur}
+                    placeholder='Enter your name'
+                    placeholderTextColor={theme.colors.textMuted}
+                    autoCapitalize='words'
+                    autoCorrect={false}
+                    returnKeyType='next'
+                    editable={!isLoading}
+                  />
+                </View>
+                <View style={styles.infoRow}>
+                  <Text
+                    style={[
+                      styles.infoLabel,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    Email
+                  </Text>
+                  <TextInput
+                    style={[styles.infoValue, { color: theme.colors.text }]}
+                    value={editingEmail}
+                    onChangeText={setEditingEmail}
+                    onBlur={handleEmailBlur}
+                    placeholder='Enter your email'
+                    placeholderTextColor={theme.colors.textMuted}
+                    keyboardType='email-address'
+                    autoCapitalize='none'
+                    autoCorrect={false}
+                    returnKeyType='done'
+                    editable={!isLoading}
+                  />
+                </View>
+              </View>
+            </GlassyCard>
+          </View>
+
+          {/* Theme Settings */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Appearance
+            </Text>
+            <GlassyCard style={styles.card}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <Text
+                    style={[styles.settingLabel, { color: theme.colors.text }]}
+                  >
+                    Dark Mode
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    Switch between light and dark themes
+                  </Text>
+                </View>
+                <Switch
+                  value={themeMode === "dark"}
+                  onValueChange={toggleTheme}
+                  disabled={isLoading}
+                  trackColor={{
+                    false: theme.colors.border,
+                    true: theme.colors.primary,
+                  }}
+                  thumbColor={
+                    themeMode === "dark"
+                      ? theme.colors.celestialGold
+                      : theme.colors.textMuted
+                  }
+                />
+              </View>
+            </GlassyCard>
+          </View>
+
+          {/* Notification Settings */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Notification Preferences
+            </Text>
+            <GlassyCard style={styles.card}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <Text
+                    style={[styles.settingLabel, { color: theme.colors.text }]}
+                  >
+                    Enable Reminders
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    Receive notifications when you haven't logged a spiritual
+                    impression
+                  </Text>
+                </View>
+                <Switch
+                  value={profile.notificationSettings.enabled}
+                  onValueChange={handleNotificationToggle}
+                  disabled={isLoading}
+                  trackColor={{
+                    false: theme.colors.border,
+                    true: theme.colors.primary,
+                  }}
+                  thumbColor={
+                    profile.notificationSettings.enabled
+                      ? theme.colors.celestialGold
+                      : theme.colors.textMuted
+                  }
+                />
+              </View>
+
+              {profile.notificationSettings.enabled && (
+                <View style={styles.intervalSection}>
+                  <Text
+                    style={[styles.intervalTitle, { color: theme.colors.text }]}
+                  >
+                    Reminder Frequency
+                  </Text>
+                  <Text
+                    style={[
+                      styles.intervalDescription,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    How often would you like to receive reminders?
+                  </Text>
+
+                  {NOTIFICATION_INTERVALS.map((interval) => (
+                    <TouchableOpacity
+                      key={interval.value}
+                      style={[
+                        styles.intervalOption,
+                        profile.notificationSettings.intervalDays ===
+                          interval.value && styles.intervalOptionSelected,
+                      ]}
+                      onPress={() => handleIntervalChange(interval.value)}
+                      disabled={isLoading}
+                    >
+                      <Text
+                        style={[
+                          styles.intervalOptionText,
+                          profile.notificationSettings.intervalDays ===
+                            interval.value && styles.intervalOptionTextSelected,
+                        ]}
+                      >
+                        {interval.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </GlassyCard>
+          </View>
+
+          {/* App Information */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              About
+            </Text>
+            <GlassyCard style={styles.card}>
+              <Text style={[styles.aboutText, { color: theme.colors.text }]}>
+                Holy Ghost Tracker helps you remember and track the spiritual
+                impressions in your life. As a member of The Church of Jesus
+                Christ of Latter-day Saints, keeping track of when you feel the
+                Holy Ghost can strengthen your testimony and help you recognize
+                the Spirit's influence more readily.
+              </Text>
+              <Text
+                style={[styles.versionText, { color: theme.colors.textMuted }]}
+              >
+                Version 1.0.0
+              </Text>
+            </GlassyCard>
+          </View>
+        </ScrollView>
+
+        {/* Feedback FAB */}
+        <FeedbackFAB />
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   scrollView: {
     flex: 1,
@@ -359,7 +463,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: "#7f8c8d",
   },
   header: {
     alignItems: "center",
@@ -368,7 +471,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
   },
   section: {
     marginBottom: 25,
@@ -376,21 +478,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 15,
   },
   card: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  userInfoCard: {
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  userInfoContent: {
+    width: "100%",
   },
   infoRow: {
     flexDirection: "row",
@@ -403,11 +502,9 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#7f8c8d",
   },
   infoValue: {
     fontSize: 16,
-    color: "#2c3e50",
   },
   settingRow: {
     flexDirection: "row",
@@ -422,12 +519,10 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 5,
   },
   settingDescription: {
     fontSize: 14,
-    color: "#7f8c8d",
     lineHeight: 18,
   },
   intervalSection: {
@@ -439,12 +534,10 @@ const styles = StyleSheet.create({
   intervalTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 5,
   },
   intervalDescription: {
     fontSize: 14,
-    color: "#7f8c8d",
     marginBottom: 15,
   },
   intervalOption: {
@@ -461,7 +554,6 @@ const styles = StyleSheet.create({
   },
   intervalOptionText: {
     fontSize: 16,
-    color: "#2c3e50",
     textAlign: "center",
     fontWeight: "500",
   },
@@ -471,13 +563,11 @@ const styles = StyleSheet.create({
   },
   aboutText: {
     fontSize: 16,
-    color: "#2c3e50",
     lineHeight: 22,
     marginBottom: 15,
   },
   versionText: {
     fontSize: 14,
-    color: "#95a5a6",
     textAlign: "center",
     fontStyle: "italic",
   },

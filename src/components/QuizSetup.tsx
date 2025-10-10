@@ -20,12 +20,14 @@ import {
 import { getCategories, getImpressions } from "../utils/storage";
 import CategoryList from "./CategoryList";
 import { generateQuiz } from "../utils/quizGenerator";
+import { useTheme } from "../theme";
 
 interface QuizSetupProps {
   onQuizGenerated?: (questions: QuizQuestion[]) => void;
 }
 
 export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
+  const { theme } = useTheme();
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [categories, setCategories] = useState<ImpressionCategory[]>([]);
   const [questionCount, setQuestionCount] = useState(5);
@@ -161,8 +163,10 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <Text style={styles.title}>AI Quiz Setup</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          AI Quiz Setup
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
           Test your knowledge of past spiritual impressions with AI
         </Text>
 
@@ -173,15 +177,22 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
               <TouchableOpacity
                 style={[
                   styles.segmentButton,
-                  quizType === "impressions" && styles.segmentButtonActive,
+                  quizType === "impressions" && [
+                    styles.segmentButtonActive,
+                    { backgroundColor: theme.colors.primary },
+                  ],
                 ]}
                 onPress={() => setQuizType("impressions")}
               >
                 <Text
                   style={[
                     styles.segmentButtonText,
-                    quizType === "impressions" &&
-                      styles.segmentButtonTextActive,
+                    quizType === "impressions"
+                      ? [
+                          styles.segmentButtonTextActive,
+                          { color: theme.colors.buttonText },
+                        ]
+                      : { color: theme.colors.textMuted },
                   ]}
                 >
                   Impressions
@@ -190,14 +201,22 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
               <TouchableOpacity
                 style={[
                   styles.segmentButton,
-                  quizType === "custom" && styles.segmentButtonActive,
+                  quizType === "custom" && [
+                    styles.segmentButtonActive,
+                    { backgroundColor: theme.colors.primary },
+                  ],
                 ]}
                 onPress={() => setQuizType("custom")}
               >
                 <Text
                   style={[
                     styles.segmentButtonText,
-                    quizType === "custom" && styles.segmentButtonTextActive,
+                    quizType === "custom"
+                      ? [
+                          styles.segmentButtonTextActive,
+                          { color: theme.colors.buttonText },
+                        ]
+                      : { color: theme.colors.textMuted },
                   ]}
                 >
                   Custom
@@ -209,7 +228,9 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
           {/* Category Selection */}
           {quizType === "impressions" && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Categories</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Categories
+              </Text>
               <CategoryList
                 selectedCategories={selectedCategories}
                 onSelectionChange={handleCategorySelection}
@@ -222,7 +243,7 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
               <Text style={styles.sectionTitle}>Custom</Text>
               <TextInput
                 style={styles.customQuestionsInput}
-                placeholder='Enter your topic of interest...'
+                placeholder="Quiz me on Lehi's vision..."
                 value={customPrompt}
                 onChangeText={setCustomPrompt}
                 multiline
@@ -235,7 +256,9 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
 
         {/* Question Count */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Number of Questions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Number of Questions
+          </Text>
           <Slider
             style={styles.slider}
             minimumValue={5}
@@ -243,23 +266,49 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
             step={5}
             value={questionCount}
             onValueChange={(value) => setQuestionCount(Math.round(value))}
-            minimumTrackTintColor='#3498db'
-            maximumTrackTintColor='#bdc3c7'
-            thumbTintColor='#3498db'
+            minimumTrackTintColor={theme.colors.primary}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.primary}
           />
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderEndLabel}>5</Text>
-            <Text style={styles.sliderEndLabel}>10</Text>
-            <Text style={styles.sliderEndLabel}>15</Text>
-            <Text style={styles.sliderEndLabel}>20</Text>
-            <Text style={styles.sliderEndLabel}>25</Text>
-            <Text style={styles.sliderEndLabel}>30</Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              5
+            </Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              10
+            </Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              15
+            </Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              20
+            </Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              25
+            </Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              30
+            </Text>
           </View>
         </View>
 
         {/* Time Limit */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Time Limit</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Time Limit
+          </Text>
           <Slider
             style={styles.slider}
             minimumValue={0}
@@ -267,19 +316,26 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
             step={1}
             value={timeLimit}
             onValueChange={(value) => setTimeLimit(Math.round(value))}
-            minimumTrackTintColor='#3498db'
-            maximumTrackTintColor='#bdc3c7'
-            thumbTintColor='#3498db'
+            minimumTrackTintColor={theme.colors.primary}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.primary}
           />
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderEndLabel}>No limit</Text>
-            <Text style={styles.sliderLabel}>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              No limit
+            </Text>
+            <Text style={[styles.sliderEndLabel, { color: theme.colors.text }]}>
               {timeLimit > 0
                 ? `${timeLimit} minute${timeLimit !== 1 ? "s" : ""}`
                 : "No limit"}
             </Text>
-
-            <Text style={styles.sliderEndLabel}>20 min</Text>
+            <Text
+              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+            >
+              20 min
+            </Text>
           </View>
         </View>
 
@@ -287,20 +343,36 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
         <TouchableOpacity
           style={[
             styles.startButton,
-            isGeneratingQuiz && styles.startButtonDisabled,
+            { backgroundColor: theme.colors.primary },
+            isGeneratingQuiz && [
+              styles.startButtonDisabled,
+              { backgroundColor: theme.colors.border },
+            ],
           ]}
           onPress={handleStartQuiz}
           disabled={isGeneratingQuiz}
         >
           {isGeneratingQuiz ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color='white' size='small' />
-              <Text style={[styles.startButtonText, { marginLeft: 10 }]}>
+              <ActivityIndicator color={theme.colors.buttonText} size='small' />
+              <Text
+                style={[
+                  styles.startButtonText,
+                  { color: theme.colors.buttonText, marginLeft: 10 },
+                ]}
+              >
                 Generating Quiz...
               </Text>
             </View>
           ) : (
-            <Text style={styles.startButtonText}>Start Quiz</Text>
+            <Text
+              style={[
+                styles.startButtonText,
+                { color: theme.colors.buttonText },
+              ]}
+            >
+              Start Quiz
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -317,13 +389,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
     marginTop: 20,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#7f8c8d",
     marginBottom: 30,
   },
   section: {
@@ -338,70 +408,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2c3e50",
     marginBottom: 15,
-  },
-  allCategoriesButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#ecf0f1",
-    borderRadius: 15,
-  },
-  allCategoriesButtonText: {
-    fontSize: 12,
-    color: "#3498db",
-    fontWeight: "600",
-  },
-  selectedText: {
-    fontSize: 14,
-    color: "#7f8c8d",
-    marginBottom: 15,
-    fontStyle: "italic",
   },
   categoryList: {
     marginBottom: 0,
-  },
-  selectedOption: {
-    backgroundColor: "#3498db",
-    borderColor: "#3498db",
-  },
-  selectedOptionText: {
-    color: "white",
-  },
-  unlimitedButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "white",
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: "#ecf0f1",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  unlimitedButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2c3e50",
-  },
-  orText: {
-    textAlign: "center",
-    fontSize: 14,
-    color: "#7f8c8d",
-    marginVertical: 15,
-    fontStyle: "italic",
-  },
-  sliderContainer: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#ecf0f1",
-  },
-  sliderLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2c3e50",
-    textAlign: "center",
   },
   slider: {
     width: "100%",
@@ -415,15 +425,13 @@ const styles = StyleSheet.create({
   },
   sliderEndLabel: {
     fontSize: 12,
-    color: "#7f8c8d",
   },
   startButton: {
-    backgroundColor: "#3498db",
     paddingVertical: 18,
     borderRadius: 25,
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: "#3498db",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -433,12 +441,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   startButtonText: {
-    color: "white",
     fontSize: 18,
     fontWeight: "bold",
   },
   startButtonDisabled: {
-    backgroundColor: "#bdc3c7",
     shadowOpacity: 0.1,
   },
   loadingContainer: {
@@ -448,7 +454,6 @@ const styles = StyleSheet.create({
   },
   segmentContainer: {
     flexDirection: "row",
-    backgroundColor: "#ecf0f1",
     borderRadius: 25,
     padding: 4,
     alignSelf: "center",
@@ -462,8 +467,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#3498db",
-    shadowColor: "#3498db",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -475,19 +479,16 @@ const styles = StyleSheet.create({
   segmentButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#7f8c8d",
   },
   segmentButtonTextActive: {
-    color: "white",
+    fontWeight: "700",
   },
   customQuestionsInput: {
-    backgroundColor: "white",
     borderRadius: 15,
     padding: 15,
     borderWidth: 1,
-    borderColor: "#ecf0f1",
     fontSize: 16,
-    color: "#2c3e50",
     minHeight: 120,
+    backgroundColor: "transparent",
   },
 });

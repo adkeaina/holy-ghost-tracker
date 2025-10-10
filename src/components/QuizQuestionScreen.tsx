@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { QuizQuestion } from "../types";
+import GlassyCard from "./GlassyCard";
+import { useTheme } from "../theme";
 
 interface QuizQuestionScreenProps {
   question: QuizQuestion;
@@ -18,6 +20,7 @@ export default function QuizQuestionScreen({
   onAnswer,
   onNext,
 }: QuizQuestionScreenProps) {
+  const { theme } = useTheme();
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
 
@@ -41,35 +44,47 @@ export default function QuizQuestionScreen({
 
   const getOptionStyle = (index: number) => {
     if (!hasAnswered) {
-      return styles.option;
+      return { ...styles.option, borderColor: theme.colors.border };
     }
 
     if (index === question.correctAnswer) {
       // Always highlight correct answer in green after answering
-      return [styles.option, styles.correctOption];
+      return {
+        ...styles.option,
+        borderColor: theme.colors.success,
+        backgroundColor: `${theme.colors.success}20`,
+      };
     }
 
     if (index === selectedAnswer && selectedAnswer !== question.correctAnswer) {
       // Highlight incorrect selected answer in red
-      return [styles.option, styles.incorrectOption];
+      return {
+        ...styles.option,
+        borderColor: theme.colors.error,
+        backgroundColor: `${theme.colors.error}20`,
+      };
     }
 
-    return [styles.option, styles.unselectedOption];
+    return { ...styles.option, borderColor: theme.colors.border, opacity: 0.6 };
   };
 
   const getOptionTextStyle = (index: number) => {
     if (!hasAnswered) {
-      return styles.optionText;
+      return { ...styles.optionText, color: theme.colors.text };
     }
 
     if (
       index === question.correctAnswer ||
       (index === selectedAnswer && selectedAnswer !== question.correctAnswer)
     ) {
-      return [styles.optionText, styles.highlightedText];
+      return {
+        ...styles.optionText,
+        color: theme.colors.text,
+        fontWeight: "600" as const,
+      };
     }
 
-    return [styles.optionText, styles.fadedText];
+    return { ...styles.optionText, color: theme.colors.textMuted };
   };
 
   const isLastQuestion = questionNumber === totalQuestions;
@@ -77,48 +92,66 @@ export default function QuizQuestionScreen({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.questionNumber}>
+        <Text
+          style={[styles.questionNumber, { color: theme.colors.textMuted }]}
+        >
           Question {questionNumber} of {totalQuestions}
         </Text>
-        <View style={styles.progressBar}>
+        <View
+          style={[styles.progressBar, { backgroundColor: theme.colors.border }]}
+        >
           <View
             style={[
               styles.progressFill,
-              { width: `${(questionNumber / totalQuestions) * 100}%` },
+              {
+                backgroundColor: theme.colors.primary,
+                width: `${(questionNumber / totalQuestions) * 100}%`,
+              },
             ]}
           />
         </View>
       </View>
 
-      <View style={styles.questionContainer}>
-        <Text style={styles.questionText}>{question.question}</Text>
-      </View>
+      <GlassyCard style={styles.questionContainer}>
+        <Text style={[styles.questionText, { color: theme.colors.text }]}>
+          {question.question}
+        </Text>
+      </GlassyCard>
 
       <View style={styles.optionsContainer}>
         {question.options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={getOptionStyle(index)}
-            onPress={() => handleOptionPress(index)}
-            disabled={hasAnswered}
-          >
-            <View style={styles.optionContent}>
-              <Text style={getOptionTextStyle(index)}>{option}</Text>
-            </View>
-          </TouchableOpacity>
+          <GlassyCard key={index} style={getOptionStyle(index)} padding={0}>
+            <TouchableOpacity
+              style={styles.optionTouchable}
+              onPress={() => handleOptionPress(index)}
+              disabled={hasAnswered}
+            >
+              <View style={styles.optionContent}>
+                <Text style={getOptionTextStyle(index)}>{option}</Text>
+              </View>
+            </TouchableOpacity>
+          </GlassyCard>
         ))}
       </View>
 
       {hasAnswered && (
         <View style={styles.bottomContainer}>
           <TouchableOpacity
-            style={styles.nextButton}
+            style={[
+              styles.nextButton,
+              { backgroundColor: theme.colors.primary },
+            ]}
             onPress={async () => {
               await setHasAnswered(false);
               onNext();
             }}
           >
-            <Text style={styles.nextButtonText}>
+            <Text
+              style={[
+                styles.nextButtonText,
+                { color: theme.colors.buttonText },
+              ]}
+            >
               {isLastQuestion ? "Finish Quiz" : "Next Question"}
             </Text>
           </TouchableOpacity>
@@ -131,7 +164,6 @@ export default function QuizQuestionScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -140,42 +172,25 @@ const styles = StyleSheet.create({
   },
   questionNumber: {
     fontSize: 16,
-    color: "#7f8c8d",
     marginBottom: 10,
     textAlign: "center",
     fontWeight: "600",
   },
   progressBar: {
     height: 4,
-    backgroundColor: "#ecf0f1",
     borderRadius: 2,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#3498db",
     borderRadius: 2,
   },
   questionContainer: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 25,
     marginBottom: 25,
-    borderWidth: 1,
-    borderColor: "#ecf0f1",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   questionText: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#2c3e50",
     lineHeight: 28,
     textAlign: "center",
   },
@@ -183,31 +198,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   option: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: "#ecf0f1",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  correctOption: {
-    borderColor: "#27ae60",
-    backgroundColor: "#d5f4e6",
-  },
-  incorrectOption: {
-    borderColor: "#e74c3c",
-    backgroundColor: "#fadbd8",
-  },
-  unselectedOption: {
-    opacity: 0.6,
+  optionTouchable: {
+    width: "100%",
+    padding: 16,
   },
   optionContent: {
     flexDirection: "row",
@@ -215,26 +211,18 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    color: "#2c3e50",
     fontWeight: "500",
     flex: 1,
     lineHeight: 22,
-  },
-  highlightedText: {
-    fontWeight: "600",
-  },
-  fadedText: {
-    color: "#7f8c8d",
   },
   bottomContainer: {
     paddingBottom: 20,
   },
   nextButton: {
-    backgroundColor: "#3498db",
     paddingVertical: 18,
     borderRadius: 25,
     alignItems: "center",
-    shadowColor: "#3498db",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -244,7 +232,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   nextButtonText: {
-    color: "white",
     fontSize: 18,
     fontWeight: "bold",
   },

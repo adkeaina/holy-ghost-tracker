@@ -6,6 +6,7 @@ import { QuizQuestion } from "../types";
 import QuizSetup from "../components/QuizSetup";
 import QuizQuestionScreen from "../components/QuizQuestionScreen";
 import QuizResults from "../components/QuizResults";
+import BackgroundGradient from "../components/BackgroundGradient";
 
 export default function QuizScreen() {
   const [quizState, setQuizState] = useState<"setup" | "question" | "result">(
@@ -49,35 +50,36 @@ export default function QuizScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {quizState === "setup" && (
-        <QuizSetup onQuizGenerated={handleQuizGenerated} />
-      )}
-      {quizState === "question" && (
-        <QuizQuestionScreen
-          question={quizQuestions[currentQuestionIndex]}
-          questionNumber={currentQuestionIndex + 1}
-          totalQuestions={quizQuestions.length}
-          onNext={handleNext}
-          onAnswer={handleAnswer}
-        />
-      )}
-      {quizState === "result" && (
-        <QuizResults
-          score={score}
-          totalQuestions={quizQuestions.length}
-          onRestart={handleRestart}
-          onBackToHome={handleBackToHome}
-        />
-      )}
-    </SafeAreaView>
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        {quizState === "setup" && (
+          <QuizSetup onQuizGenerated={handleQuizGenerated} />
+        )}
+        {quizState === "question" && (
+          <QuizQuestionScreen
+            question={quizQuestions[currentQuestionIndex]}
+            questionNumber={currentQuestionIndex + 1}
+            totalQuestions={quizQuestions.length}
+            onNext={handleNext}
+            onAnswer={handleAnswer}
+          />
+        )}
+        {quizState === "result" && (
+          <QuizResults
+            score={score}
+            totalQuestions={quizQuestions.length}
+            onRestart={handleRestart}
+            onBackToHome={handleBackToHome}
+          />
+        )}
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   content: {
     flex: 1,
@@ -87,12 +89,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#7f8c8d",
     marginBottom: 30,
   },
 });
