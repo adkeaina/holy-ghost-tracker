@@ -310,7 +310,7 @@ export default function CategoryModal({
           <TouchableOpacity
             style={[
               styles.saveButton,
-              { backgroundColor: theme.colors.success },
+              { backgroundColor: theme.colors.buttonPrimary },
               isLoading && { backgroundColor: theme.colors.textMuted },
               isEditMode && isNotRemovable && styles.saveButtonFullWidth,
             ]}

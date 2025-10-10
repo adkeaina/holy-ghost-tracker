@@ -25,6 +25,7 @@ import NewImpressionForm from "../components/NewImpressionForm";
 import Impression from "../components/Impression";
 import BackgroundGradient from "../components/BackgroundGradient";
 import GlassyCard from "../components/GlassyCard";
+import FeedbackFAB from "../components/FeedbackFAB";
 import { useTheme } from "../theme";
 
 const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
@@ -251,6 +252,9 @@ export default function HomeScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Feedback FAB */}
+        <FeedbackFAB />
       </SafeAreaView>
     </BackgroundGradient>
   );

@@ -83,11 +83,29 @@ export default function OnboardingScreen({
               <Text style={[styles.title, { color: theme.colors.text }]}>
                 Welcome to
               </Text>
-              <Text style={[styles.appName, { color: theme.colors.primary }]}>
+              <Text
+                style={[
+                  styles.appName,
+                  {
+                    color: theme.colors.primary,
+                    textShadowColor: "rgba(0, 0, 0, 0.3)",
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 4,
+                  },
+                ]}
+              >
                 Holy Ghost Tracker
               </Text>
               <Text
-                style={[styles.subtitle, { color: theme.colors.textMuted }]}
+                style={[
+                  styles.subtitle,
+                  {
+                    color: theme.colors.text,
+                    textShadowColor: "rgba(0, 0, 0, 0.2)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  },
+                ]}
               >
                 Let's get started by setting up your profile
               </Text>

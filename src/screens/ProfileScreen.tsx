@@ -24,6 +24,7 @@ import {
 } from "../utils/notifications";
 import BackgroundGradient from "../components/BackgroundGradient";
 import GlassyCard from "../components/GlassyCard";
+import FeedbackFAB from "../components/FeedbackFAB";
 import { useTheme } from "../theme";
 
 const NOTIFICATION_INTERVALS = [
@@ -437,6 +438,9 @@ export default function ProfileScreen() {
             </GlassyCard>
           </View>
         </ScrollView>
+
+        {/* Feedback FAB */}
+        <FeedbackFAB />
       </SafeAreaView>
     </BackgroundGradient>
   );

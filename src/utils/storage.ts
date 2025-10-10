@@ -376,3 +376,29 @@ export const getEnv = (key: string): string => {
     return "";
   }
 };
+
+export const submitFeedback = async (feedback: string): Promise<void> => {
+  try {
+    const { name, email } = await getUserProfile();
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbxerqhtQGSKyVf5qtvHgNp2BpSypsdiS4kEAZ4OdQ06XBAvhOUtJeUYu3rUBxFmC0M8xQ/exec",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          feedback,
+          secret: getEnv("EXPO_PUBLIC_FEEDBACK_API_KEY"),
+        }),
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to submit feedback");
+    }
+    console.log("Feedback submitted successfully: ", response.json());
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    throw error;
+  }
+};
