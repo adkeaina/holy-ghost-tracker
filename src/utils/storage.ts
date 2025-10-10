@@ -396,7 +396,6 @@ export const submitFeedback = async (feedback: string): Promise<void> => {
     if (!response.ok) {
       throw new Error("Failed to submit feedback");
     }
-    console.log("Feedback submitted successfully: ", response.json());
   } catch (error) {
     console.error("Error submitting feedback:", error);
     throw error;
