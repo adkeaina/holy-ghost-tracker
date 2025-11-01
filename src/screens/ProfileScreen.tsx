@@ -7,17 +7,12 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import { UserProfile, NotificationSettings } from "../types";
-import {
-  getUserProfile,
-  updateNotificationSettings,
-  saveUserProfile,
-} from "../utils/storage";
+import { getUserProfile, updateNotificationSettings } from "../utils/storage";
 import {
   scheduleNotification,
   requestNotificationPermissions,
@@ -26,6 +21,7 @@ import BackgroundGradient from "../components/BackgroundGradient";
 import GlassyCard from "../components/GlassyCard";
 import FeedbackFAB from "../components/FeedbackFAB";
 import { useTheme } from "../theme";
+import { supabase } from "../utils/supabase";
 
 const NOTIFICATION_INTERVALS = [
   { label: "1 Day", value: 1 as const },
@@ -38,8 +34,6 @@ const NOTIFICATION_INTERVALS = [
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [editingName, setEditingName] = useState("");
-  const [editingEmail, setEditingEmail] = useState("");
   const { theme, themeMode, toggleTheme } = useTheme();
 
   useFocusEffect(
@@ -52,66 +46,8 @@ export default function ProfileScreen() {
     try {
       const userProfile = await getUserProfile();
       setProfile(userProfile);
-      setEditingName(userProfile.name);
-      setEditingEmail(userProfile.email);
     } catch (error) {
       console.error("Error loading profile:", error);
-    }
-  };
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleNameBlur = async () => {
-    if (!profile) return;
-
-    const trimmedName = editingName.trim();
-    if (!trimmedName) {
-      // Revert to original name if empty
-      setEditingName(profile.name);
-      return;
-    }
-
-    if (trimmedName !== profile.name) {
-      try {
-        const updatedProfile = { ...profile, name: trimmedName };
-        await saveUserProfile(updatedProfile);
-        setProfile(updatedProfile);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch (error) {
-        console.error("Error updating name:", error);
-        setEditingName(profile.name); // Revert on error
-        Alert.alert("Error", "Failed to update name. Please try again.");
-      }
-    }
-  };
-
-  const handleEmailBlur = async () => {
-    if (!profile) return;
-
-    const trimmedEmail = editingEmail.trim();
-    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
-      // Revert to original email if empty or invalid
-      setEditingEmail(profile.email);
-      if (trimmedEmail && !validateEmail(trimmedEmail)) {
-        Alert.alert("Invalid Email", "Please enter a valid email address.");
-      }
-      return;
-    }
-
-    if (trimmedEmail !== profile.email) {
-      try {
-        const updatedProfile = { ...profile, email: trimmedEmail };
-        await saveUserProfile(updatedProfile);
-        setProfile(updatedProfile);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch (error) {
-        console.error("Error updating email:", error);
-        setEditingEmail(profile.email); // Revert on error
-        Alert.alert("Error", "Failed to update email. Please try again.");
-      }
     }
   };
 
@@ -211,6 +147,29 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await supabase.auth.signOut();
+            // AuthProvider will handle the session update automatically
+          } catch (error) {
+            console.error("Error signing out:", error);
+            Alert.alert("Error", "Failed to sign out. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
   if (!profile) {
     return (
       <BackgroundGradient>
@@ -253,43 +212,13 @@ export default function ProfileScreen() {
                       { color: theme.colors.textMuted },
                     ]}
                   >
-                    Name
-                  </Text>
-                  <TextInput
-                    style={[styles.infoValue, { color: theme.colors.text }]}
-                    value={editingName}
-                    onChangeText={setEditingName}
-                    onBlur={handleNameBlur}
-                    placeholder='Enter your name'
-                    placeholderTextColor={theme.colors.textMuted}
-                    autoCapitalize='words'
-                    autoCorrect={false}
-                    returnKeyType='next'
-                    editable={!isLoading}
-                  />
-                </View>
-                <View style={styles.infoRow}>
-                  <Text
-                    style={[
-                      styles.infoLabel,
-                      { color: theme.colors.textMuted },
-                    ]}
-                  >
                     Email
                   </Text>
-                  <TextInput
+                  <Text
                     style={[styles.infoValue, { color: theme.colors.text }]}
-                    value={editingEmail}
-                    onChangeText={setEditingEmail}
-                    onBlur={handleEmailBlur}
-                    placeholder='Enter your email'
-                    placeholderTextColor={theme.colors.textMuted}
-                    keyboardType='email-address'
-                    autoCapitalize='none'
-                    autoCorrect={false}
-                    returnKeyType='done'
-                    editable={!isLoading}
-                  />
+                  >
+                    {profile.email}
+                  </Text>
                 </View>
               </View>
             </GlassyCard>
@@ -437,6 +366,24 @@ export default function ProfileScreen() {
               </Text>
             </GlassyCard>
           </View>
+
+          {/* Logout Section */}
+          <View style={styles.section}>
+            <GlassyCard style={styles.card}>
+              <TouchableOpacity
+                style={[
+                  styles.logoutButton,
+                  { borderColor: theme.colors.textMuted },
+                ]}
+                onPress={handleLogout}
+                disabled={isLoading}
+              >
+                <Text style={[styles.logoutButtonText, { color: "#e74c3c" }]}>
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </GlassyCard>
+          </View>
         </ScrollView>
 
         {/* Feedback FAB */}
@@ -570,5 +517,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  logoutButton: {
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

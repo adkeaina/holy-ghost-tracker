@@ -93,9 +93,6 @@ Make the questions thoughtful and test both specific details and broader spiritu
         if (attempt > 1) {
           // Wait with exponential backoff before retry
           const delay = baseDelay * Math.pow(2, attempt - 1);
-          console.log(
-            `Retrying OpenAI request (attempt ${attempt}/${maxRetries}) after ${delay}ms delay...`
-          );
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
@@ -141,9 +138,6 @@ Make the questions thoughtful and test both specific details and broader spiritu
             attempt < maxRetries
           ) {
             lastError = error;
-            console.warn(
-              `OpenAI API temporary error (${response.status}), will retry...`
-            );
             continue;
           }
 
@@ -191,7 +185,6 @@ Make the questions thoughtful and test both specific details and broader spiritu
             !Array.isArray(question.options) ||
             typeof question.correctAnswer !== "number"
           ) {
-            console.warn(`Invalid question format at index ${i}:`, question);
             throw new Error(`Invalid question format at index ${i}`);
           }
         }

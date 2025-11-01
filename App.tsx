@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, StyleSheet } from "react-native";
+import * as Linking from "expo-linking";
 
 import { RootTabParamList } from "./src/types";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -12,53 +13,93 @@ import QuizScreen from "./src/screens/QuizScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import {
-  getCategories,
-  getHasOnboarded,
-  completeOnboarding,
-} from "./src/utils/storage";
+import { getCategories } from "./src/utils/storage";
 import { ThemeProvider, useTheme } from "./src/theme";
+import AuthProvider from "./src/utils/authProvider";
+import { useAuthContext } from "./src/utils/useAuthContext";
+import { supabase } from "./src/utils/supabase";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 // Main App Content Component
 function AppContent() {
-  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { session, isLoading } = useAuthContext();
   const { theme } = useTheme();
 
   // Initialize app on startup
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Check onboarding status
-        const onboardingStatus = await getHasOnboarded();
-        setHasOnboarded(onboardingStatus);
-
         // Initialize categories if needed
         await getCategories();
       } catch (error) {
-        console.error("Error initializing app:", error);
-        setHasOnboarded(false); // Default to showing onboarding on error
-      } finally {
-        setIsLoading(false);
+        // Silently handle initialization errors
       }
     };
 
     initializeApp();
   }, []);
 
-  const handleOnboardingComplete = async (name: string, email: string) => {
-    try {
-      await completeOnboarding(name, email);
-      setHasOnboarded(true);
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
-      throw error;
-    }
-  };
+  // Handle OAuth callback URLs
+  useEffect(() => {
+    const handleOAuthCallback = async (url: string) => {
+      try {
+        // Supabase OAuth redirects use hash fragments (#) in React Native
+        // The URL format is: holyghosttracker://#access_token=...&refresh_token=...
+        const hashIndex = url.indexOf("#");
+        if (hashIndex === -1) {
+          return;
+        }
 
-  // Show loading screen while checking onboarding status
+        const hashParams = new URLSearchParams(url.substring(hashIndex + 1));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const error = hashParams.get("error");
+        const errorDescription = hashParams.get("error_description");
+
+        if (error) {
+          // Silently handle OAuth errors
+          return;
+        }
+
+        if (accessToken && refreshToken) {
+          // Exchange the tokens for a session
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            // Silently handle session errors
+          }
+          // The auth state change listener in AuthProvider will handle the session update
+        }
+      } catch (error) {
+        // Silently handle OAuth callback errors
+      }
+    };
+
+    // Handle initial URL when app opens from a deep link
+    const handleInitialUrl = async () => {
+      const url = await Linking.getInitialURL();
+      if (url) {
+        await handleOAuthCallback(url);
+      }
+    };
+
+    handleInitialUrl();
+
+    // Listen for URL changes (when app is already open)
+    const subscription = Linking.addEventListener("url", async (event) => {
+      await handleOAuthCallback(event.url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Show loading screen while checking auth status
   if (isLoading) {
     return (
       <SafeAreaProvider>
@@ -79,11 +120,11 @@ function AppContent() {
     );
   }
 
-  // Show onboarding screen if user hasn't onboarded
-  if (!hasOnboarded) {
+  // Show login screen if user is not authenticated
+  if (!session) {
     return (
       <SafeAreaProvider>
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
+        <OnboardingScreen />
         <StatusBar
           style={theme.colors.background === "#FAFAFA" ? "dark" : "light"}
         />
@@ -165,7 +206,9 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
