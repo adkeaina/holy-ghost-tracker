@@ -116,11 +116,6 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
         questionsToUse = result.questions;
       } else {
         // Fall back to mock questions if AI generation fails
-        console.warn(
-          "AI generation failed, using mock questions:",
-          "error" in result ? result.error : "Unknown error"
-        );
-
         // Mock response for demonstration purposes
         questionsToUse = [
           {

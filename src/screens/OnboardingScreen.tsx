@@ -3,66 +3,172 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
+import * as AppleAuthentication from "expo-apple-authentication";
 import BackgroundGradient from "../components/BackgroundGradient";
 import { useTheme } from "../theme";
+import { supabase } from "../utils/supabase";
 
-interface OnboardingScreenProps {
-  onComplete: (name: string, email: string) => void;
-}
-
-export default function OnboardingScreen({
-  onComplete,
-}: OnboardingScreenProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+export default function OnboardingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { theme } = useTheme();
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleContinue = async () => {
-    if (!name.trim()) {
-      Alert.alert("Name Required", "Please enter your full name to continue.");
-      return;
-    }
-
-    if (!email.trim()) {
-      Alert.alert(
-        "Email Required",
-        "Please enter your email address to continue."
-      );
-      return;
-    }
-
-    if (!validateEmail(email.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
-      return;
-    }
-
+  // Native Apple Sign In for iOS
+  const handleNativeAppleSignIn = async () => {
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      await onComplete(name.trim(), email.trim());
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
-      Alert.alert(
-        "Error",
-        "There was an error setting up your profile. Please try again."
-      );
+      // Verify Supabase configuration before proceeding
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        const missing = [];
+        if (!supabaseUrl) missing.push("EXPO_PUBLIC_SUPABASE_URL");
+        if (!supabaseKey) missing.push("EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+        throw new Error(
+          `Supabase configuration is missing: ${missing.join(
+            ", "
+          )}. Please check your .env file and restart Expo.`
+        );
+      }
+
+      // For local Supabase with Expo Go, we need the computer's local IP, not 127.0.0.1
+      if (
+        supabaseUrl.includes("127.0.0.1") ||
+        supabaseUrl.includes("localhost")
+      ) {
+        throw new Error(
+          "Localhost Supabase URLs won't work in Expo Go. Please use your computer's local IP address (e.g., http://192.168.1.100:54321) or a cloud Supabase instance."
+        );
+      }
+
+      if (
+        !supabaseUrl.startsWith("http://") &&
+        !supabaseUrl.startsWith("https://")
+      ) {
+        throw new Error(
+          "Supabase URL must start with http:// or https://. Current URL format is invalid."
+        );
+      }
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error("No identityToken received from Apple.");
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken,
+      });
+
+      if (error) {
+        // Provide more helpful error messages
+        if (
+          error.message?.includes("Provider") &&
+          error.message?.includes("not enabled")
+        ) {
+          throw new Error(
+            "Apple authentication is not enabled in your Supabase project. Please enable it in your Supabase dashboard under Authentication > Providers > Apple."
+          );
+        }
+        if (error.message?.includes("Network request failed")) {
+          throw new Error(
+            "Network connection failed. Please check your internet connection and ensure your Supabase project is configured correctly."
+          );
+        }
+        throw error;
+      }
+
+      // Apple only provides the user's full name on the first sign-in
+      // Save it to user metadata if available
+      if (credential.fullName) {
+        try {
+          const nameParts = [];
+          if (credential.fullName.givenName)
+            nameParts.push(credential.fullName.givenName);
+          if (credential.fullName.middleName)
+            nameParts.push(credential.fullName.middleName);
+          if (credential.fullName.familyName)
+            nameParts.push(credential.fullName.familyName);
+
+          const fullName = nameParts.join(" ");
+
+          await supabase.auth.updateUser({
+            data: {
+              full_name: fullName,
+              given_name: credential.fullName.givenName,
+              family_name: credential.fullName.familyName,
+            },
+          });
+        } catch (nameError) {
+          // Non-critical error - user is still signed in
+        }
+      }
+    } catch (e: any) {
+      if (e.code === "ERR_REQUEST_CANCELED") {
+        // User canceled the sign-in flow - don't show an error
+      } else {
+        const errorMessage =
+          e.message ||
+          (e instanceof Error ? e.message : "Unknown error occurred");
+        Alert.alert(
+          "Sign In Error",
+          errorMessage ||
+            "There was an error signing in with Apple. Please try again."
+        );
+      }
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // OAuth flow for Android and other platforms
+  const handleOAuthAppleSignIn = async () => {
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      // Get the redirect URL for OAuth callback
+      const redirectUrl = Linking.createURL("/");
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // The OAuth flow will open a browser and redirect back to the app
+      // The auth state change listener in AuthProvider will handle the session update
+      // Reset loading state - user will be redirected to browser
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error signing in with Apple:", error);
+      Alert.alert(
+        "Sign In Error",
+        error.message ||
+          "There was an error signing in with Apple. Please try again."
+      );
       setIsLoading(false);
     }
   };
@@ -70,138 +176,104 @@ export default function OnboardingScreen({
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoid}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps='handled'
         >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps='handled'
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={[styles.title, { color: theme.colors.text }]}>
-                Welcome to
-              </Text>
-              <Text
-                style={[
-                  styles.appName,
-                  {
-                    color: theme.colors.primary,
-                    textShadowColor: "rgba(0, 0, 0, 0.3)",
-                    textShadowOffset: { width: 0, height: 2 },
-                    textShadowRadius: 4,
-                  },
-                ]}
-              >
-                Holy Ghost Tracker
-              </Text>
-              <Text
-                style={[
-                  styles.subtitle,
-                  {
-                    color: theme.colors.text,
-                    textShadowColor: "rgba(0, 0, 0, 0.2)",
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
-                  },
-                ]}
-              >
-                Let's get started by setting up your profile
-              </Text>
-            </View>
-
-            {/* Form */}
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: theme.colors.text }]}>
-                  Full Name
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: theme.colors.border,
-                      color: theme.colors.text,
-                    },
-                  ]}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder='Enter your full name'
-                  placeholderTextColor={theme.colors.textMuted}
-                  autoCapitalize='words'
-                  autoCorrect={false}
-                  returnKeyType='next'
-                  editable={!isLoading}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: theme.colors.text }]}>
-                  Email Address
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: theme.colors.border,
-                      color: theme.colors.text,
-                    },
-                  ]}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder='Enter your email address'
-                  placeholderTextColor={theme.colors.textMuted}
-                  keyboardType='email-address'
-                  autoCapitalize='none'
-                  autoCorrect={false}
-                  returnKeyType='done'
-                  onSubmitEditing={handleContinue}
-                  editable={!isLoading}
-                />
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.continueButton,
-                  { backgroundColor: theme.colors.primary },
-                  isLoading && { backgroundColor: theme.colors.textMuted },
-                ]}
-                onPress={handleContinue}
-                disabled={isLoading}
-              >
-                <Text
-                  style={[
-                    styles.continueButtonText,
-                    { color: theme.colors.buttonText },
-                  ]}
-                >
-                  {isLoading ? "Setting up..." : "Continue"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Description */}
-            <View
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              Welcome to
+            </Text>
+            <Text
               style={[
-                styles.description,
-                { backgroundColor: theme.colors.surface },
+                styles.appName,
+                {
+                  color: theme.colors.primary,
+                  textShadowColor: "rgba(0, 0, 0, 0.3)",
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 4,
+                },
               ]}
             >
-              <Text
-                style={[styles.descriptionText, { color: theme.colors.text }]}
+              Holy Ghost Tracker
+            </Text>
+            <Text
+              style={[
+                styles.subtitle,
+                {
+                  color: theme.colors.text,
+                  textShadowColor: "rgba(0, 0, 0, 0.2)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                },
+              ]}
+            >
+              Sign in to start tracking your spiritual impressions
+            </Text>
+          </View>
+
+          {/* Sign In Button */}
+          <View style={styles.signInContainer}>
+            {Platform.OS === "ios" ? (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                }
+                buttonStyle={
+                  AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={12}
+                style={styles.nativeAppleButton}
+                onPress={handleNativeAppleSignIn}
+              />
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.appleButton,
+                  {
+                    backgroundColor: theme.colors.text,
+                    borderColor: theme.colors.border,
+                  },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleOAuthAppleSignIn}
+                disabled={isLoading}
               >
-                Holy Ghost Tracker helps you remember and track the spiritual
-                impressions in your life. As a member of The Church of Jesus
-                Christ of Latter-day Saints, keeping track of when you feel the
-                Holy Ghost can strengthen your testimony and help you recognize
-                the Spirit's influence more readily.
-              </Text>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+                {isLoading ? (
+                  <ActivityIndicator color={theme.colors.background} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.appleButtonText,
+                      { color: theme.colors.background },
+                    ]}
+                  >
+                    Continue with Apple
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Description */}
+          <View
+            style={[
+              styles.description,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <Text
+              style={[styles.descriptionText, { color: theme.colors.text }]}
+            >
+              Holy Ghost Tracker helps you remember and track the spiritual
+              impressions in your life. As a member of The Church of Jesus
+              Christ of Latter-day Saints, keeping track of when you feel the
+              Holy Ghost can strengthen your testimony and help you recognize
+              the Spirit's influence more readily.
+            </Text>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </BackgroundGradient>
   );
@@ -211,9 +283,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardAvoid: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
     padding: 20,
@@ -221,7 +290,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 50,
   },
   title: {
     fontSize: 24,
@@ -238,37 +307,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  form: {
+  signInContainer: {
     marginBottom: 30,
+    alignItems: "center",
   },
-  inputContainer: {
-    marginBottom: 20,
+  nativeAppleButton: {
+    width: "100%",
+    height: 56,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  continueButton: {
+  appleButton: {
     borderRadius: 12,
     padding: 18,
     alignItems: "center",
-    marginTop: 10,
-    shadowColor: "#3498db",
+    justifyContent: "center",
+    borderWidth: 2,
+    minHeight: 56,
+    width: "100%",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -278,10 +333,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonDisabled: {
-    backgroundColor: "#bdc3c7",
-    shadowOpacity: 0.1,
+    opacity: 0.6,
   },
-  continueButtonText: {
+  appleButtonText: {
     fontSize: 18,
     fontWeight: "bold",
   },
