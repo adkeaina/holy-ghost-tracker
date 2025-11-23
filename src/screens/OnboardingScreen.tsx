@@ -173,6 +173,32 @@ export default function OnboardingScreen() {
     }
   };
 
+  // Test user sign in (dev only)
+  const handleTestUserSignIn = async () => {
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: "test-user@example.com",
+        password: "Password1!",
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error("Error signing in with test user:", error);
+      Alert.alert(
+        "Sign In Error",
+        error.message ||
+          "There was an error signing in with the test user. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -250,6 +276,35 @@ export default function OnboardingScreen() {
                     ]}
                   >
                     Continue with Apple
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Test User Sign In (Dev Only) */}
+            {process.env.EXPO_PUBLIC_NODE_ENV === "dev" && (
+              <TouchableOpacity
+                style={[
+                  styles.testButton,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleTestUserSignIn}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={theme.colors.text} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.testButtonText,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    Sign in with test user
                   </Text>
                 )}
               </TouchableOpacity>
@@ -338,6 +393,28 @@ const styles = StyleSheet.create({
   appleButtonText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  testButton: {
+    borderRadius: 12,
+    padding: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    minHeight: 56,
+    width: "100%",
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  testButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   description: {
     padding: 20,

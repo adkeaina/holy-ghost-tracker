@@ -225,7 +225,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Theme Settings */}
-          <View style={styles.section}>
+          {/* <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Appearance
             </Text>
@@ -262,7 +262,7 @@ export default function ProfileScreen() {
                 />
               </View>
             </GlassyCard>
-          </View>
+          </View> */}
 
           {/* Notification Settings */}
           <View style={styles.section}>
