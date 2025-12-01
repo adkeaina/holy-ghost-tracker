@@ -8,20 +8,26 @@ import {
   Switch,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
-import { UserProfile, NotificationSettings } from "../types";
-import { getUserProfile, updateNotificationSettings } from "../utils/storage";
+import { UserProfile, NotificationSettings } from "@/src/types";
+import {
+  getUserProfile,
+  updateNotificationSettings,
+} from "@/src/utils/storage";
 import {
   scheduleNotification,
   requestNotificationPermissions,
-} from "../utils/notifications";
-import BackgroundGradient from "../components/BackgroundGradient";
-import GlassyCard from "../components/GlassyCard";
-import FeedbackFAB from "../components/FeedbackFAB";
-import { useTheme } from "../theme";
-import { supabase } from "../utils/supabase";
+} from "@/src/utils/notifications";
+import BackgroundGradient from "@/src/components/BackgroundGradient";
+import GlassyCard from "@/src/components/GlassyCard";
+import FeedbackFAB from "@/src/components/FeedbackFAB";
+import { useTheme } from "@/src/theme";
+import { supabase } from "@/src/utils/supabase";
 
 const NOTIFICATION_INTERVALS = [
   { label: "1 Day", value: 1 as const },
@@ -31,10 +37,11 @@ const NOTIFICATION_INTERVALS = [
   { label: "1 Month", value: 30 as const },
 ];
 
-export default function ProfileScreen() {
+export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { theme, themeMode, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -189,7 +196,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+          ]}
         >
           {/* Header */}
           <View style={styles.header}>

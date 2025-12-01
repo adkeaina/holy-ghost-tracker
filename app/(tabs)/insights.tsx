@@ -12,23 +12,26 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { SpiritualImpression, ImpressionCategory } from "../types";
+import { SpiritualImpression, ImpressionCategory } from "@/src/types";
 import {
   getImpressions,
   updateImpression,
   deleteImpression,
-} from "../utils/storage";
-import NewImpressionForm from "../components/NewImpressionForm";
-import Impression from "../components/Impression";
-import FilterModal, { FilterOptions } from "../components/FilterModal";
-import BackgroundGradient from "../components/BackgroundGradient";
-import { useTheme } from "../theme";
+} from "@/src/utils/storage";
+import NewImpressionForm from "@/src/components/NewImpressionForm";
+import Impression from "@/src/components/Impression";
+import FilterModal, { FilterOptions } from "@/src/components/FilterModal";
+import BackgroundGradient from "@/src/components/BackgroundGradient";
+import { useTheme } from "@/src/theme";
 
-export default function AllImpressionsScreen() {
+export default function Insights() {
   const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
   const [selectedImpression, setSelectedImpression] =
     useState<SpiritualImpression | null>(null);
@@ -42,6 +45,7 @@ export default function AllImpressionsScreen() {
     description: "",
   });
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -325,7 +329,10 @@ export default function AllImpressionsScreen() {
                 data={filteredImpressions}
                 keyExtractor={(item) => item.id}
                 renderItem={renderImpression}
-                contentContainerStyle={styles.listContainer}
+                contentContainerStyle={[
+                  styles.listContainer,
+                  { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+                ]}
                 showsVerticalScrollIndicator={false}
               />
             ) : (

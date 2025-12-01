@@ -13,11 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import * as AppleAuthentication from "expo-apple-authentication";
-import BackgroundGradient from "../components/BackgroundGradient";
-import { useTheme } from "../theme";
-import { supabase } from "../utils/supabase";
+import BackgroundGradient from "@/src/components/BackgroundGradient";
+import { useTheme } from "@/src/theme";
+import { supabase } from "@/src/utils/supabase";
 
-export default function OnboardingScreen() {
+export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const { theme } = useTheme();
 

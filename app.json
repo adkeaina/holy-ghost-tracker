@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "holyghosttracker",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -26,6 +27,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "package": "com.adkeaina.holyghosttracker",
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.RECEIVE_BOOT_COMPLETED"
@@ -51,6 +53,9 @@
       "eas": {
         "projectId": "e6f320c7-7fdd-4a36-974e-652418139d9f"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "owner": "adkeaina"
   }

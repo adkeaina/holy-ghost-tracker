@@ -1,20 +1,24 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, View } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { QuizQuestion } from "../types";
-import QuizSetup from "../components/QuizSetup";
-import QuizQuestionScreen from "../components/QuizQuestionScreen";
-import QuizResults from "../components/QuizResults";
-import BackgroundGradient from "../components/BackgroundGradient";
+import { QuizQuestion } from "@/src/types";
+import QuizSetup from "@/src/components/QuizSetup";
+import QuizQuestionScreen from "@/src/components/QuizQuestionScreen";
+import QuizResults from "@/src/components/QuizResults";
+import BackgroundGradient from "@/src/components/BackgroundGradient";
 
-export default function QuizScreen() {
+export default function Quiz() {
   const [quizState, setQuizState] = useState<"setup" | "question" | "result">(
     "setup"
   );
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const handleQuizGenerated = (questions: QuizQuestion[]) => {
     setQuizQuestions(questions);
@@ -52,26 +56,33 @@ export default function QuizScreen() {
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container} edges={["top"]}>
-        {quizState === "setup" && (
-          <QuizSetup onQuizGenerated={handleQuizGenerated} />
-        )}
-        {quizState === "question" && (
-          <QuizQuestionScreen
-            question={quizQuestions[currentQuestionIndex]}
-            questionNumber={currentQuestionIndex + 1}
-            totalQuestions={quizQuestions.length}
-            onNext={handleNext}
-            onAnswer={handleAnswer}
-          />
-        )}
-        {quizState === "result" && (
-          <QuizResults
-            score={score}
-            totalQuestions={quizQuestions.length}
-            onRestart={handleRestart}
-            onBackToHome={handleBackToHome}
-          />
-        )}
+        <View
+          style={[
+            styles.contentWrapper,
+            { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+          ]}
+        >
+          {quizState === "setup" && (
+            <QuizSetup onQuizGenerated={handleQuizGenerated} />
+          )}
+          {quizState === "question" && (
+            <QuizQuestionScreen
+              question={quizQuestions[currentQuestionIndex]}
+              questionNumber={currentQuestionIndex + 1}
+              totalQuestions={quizQuestions.length}
+              onNext={handleNext}
+              onAnswer={handleAnswer}
+            />
+          )}
+          {quizState === "result" && (
+            <QuizResults
+              score={score}
+              totalQuestions={quizQuestions.length}
+              onRestart={handleRestart}
+              onBackToHome={handleBackToHome}
+            />
+          )}
+        </View>
       </SafeAreaView>
     </BackgroundGradient>
   );
@@ -79,6 +90,9 @@ export default function QuizScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  contentWrapper: {
     flex: 1,
   },
   content: {
