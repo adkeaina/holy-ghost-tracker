@@ -9,28 +9,34 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { SpiritualImpression } from "../types";
+import { SpiritualImpression } from "@/src/types";
 import {
   getLastImpression,
   resetCategoriesToDefault,
   getEnv,
   resetUserInfo,
-} from "../utils/storage";
-import { formatTimeDuration, getTimeSinceLastImpression } from "../utils/time";
-import NewImpressionForm from "../components/NewImpressionForm";
-import Impression from "../components/Impression";
-import BackgroundGradient from "../components/BackgroundGradient";
-import GlassyCard from "../components/GlassyCard";
-import FeedbackFAB from "../components/FeedbackFAB";
-import { useTheme } from "../theme";
+} from "@/src/utils/storage";
+import {
+  formatTimeDuration,
+  getTimeSinceLastImpression,
+} from "@/src/utils/time";
+import NewImpressionForm from "@/src/components/NewImpressionForm";
+import Impression from "@/src/components/Impression";
+import BackgroundGradient from "@/src/components/BackgroundGradient";
+import GlassyCard from "@/src/components/GlassyCard";
+import FeedbackFAB from "@/src/components/FeedbackFAB";
+import { useTheme } from "@/src/theme";
 
 const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
-export default function HomeScreen() {
+export default function Home() {
   const [lastImpression, setLastImpression] =
     useState<SpiritualImpression | null>(null);
   const [timeSince, setTimeSince] = useState<number>(0);
@@ -39,6 +45,7 @@ export default function HomeScreen() {
   const [testingToolsExpanded, setTestingToolsExpanded] =
     useState<boolean>(false);
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Load last impression when screen focuses
   useFocusEffect(
@@ -154,7 +161,10 @@ export default function HomeScreen() {
           <ScrollView
             ref={scrollViewRef}
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+            ]}
             keyboardShouldPersistTaps='handled'
             showsVerticalScrollIndicator={false}
           >

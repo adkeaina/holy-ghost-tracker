@@ -559,6 +559,11 @@ export const getCategories = async (): Promise<ImpressionCategory[]> => {
   try {
     const userId = await getCurrentUserId();
 
+    // Return early if user is not logged in
+    if (!userId) {
+      return [];
+    }
+
     const { data, error } = await supabase
       .from("categories")
       .select("*")
