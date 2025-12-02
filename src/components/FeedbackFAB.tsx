@@ -13,13 +13,15 @@ import * as Haptics from "expo-haptics";
 import { MaterialIcons } from "@expo/vector-icons";
 import { submitFeedback } from "../utils/storage";
 import GlassyCard from "./GlassyCard";
-import { useTheme } from "../theme";
+import { getTabBarPadding, useTheme } from "../theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function FeedbackFAB() {
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const handleFeedbackPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -62,7 +64,13 @@ export default function FeedbackFAB() {
     <>
       {/* Feedback FAB */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.colors.primary,
+            bottom: getTabBarPadding(insets.bottom) + 20,
+          },
+        ]}
         onPress={handleFeedbackPress}
         activeOpacity={0.8}
       >
@@ -168,7 +176,6 @@ export default function FeedbackFAB() {
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    bottom: 100,
     right: 20,
     width: 56,
     height: 56,

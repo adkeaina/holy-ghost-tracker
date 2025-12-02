@@ -5,10 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
@@ -18,24 +14,17 @@ import {
 } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SpiritualImpression, ImpressionCategory } from "@/src/types";
-import {
-  getImpressions,
-  updateImpression,
-  deleteImpression,
-} from "@/src/utils/storage";
-import NewImpressionForm from "@/src/components/NewImpressionForm";
+import { getImpressions } from "@/src/utils/storage";
 import Impression from "@/src/components/Impression";
 import FilterModal, { FilterOptions } from "@/src/components/FilterModal";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
-import { useTheme } from "@/src/theme";
+import { useTheme, getTabBarPadding } from "@/src/theme";
 
 export default function Insights() {
   const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
-  const [selectedImpression, setSelectedImpression] =
-    useState<SpiritualImpression | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
   const [expandedImpression, setExpandedImpression] =
     useState<SpiritualImpression | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -174,71 +163,12 @@ export default function Insights() {
   };
 
   const handleImpressionLongPress = (impression: SpiritualImpression) => {
-    setSelectedImpression(impression);
-    setModalVisible(true);
-  };
-
-  const handleUpdate = async (data: {
-    description: string;
-    dateTime: string;
-    categories: number[];
-  }) => {
-    if (!selectedImpression) return;
-
-    try {
-      await updateImpression(selectedImpression.id, {
-        description: data.description,
-        dateTime: data.dateTime,
-        categories: data.categories,
-      });
-
-      setModalVisible(false);
-      await loadImpressions();
-      Alert.alert("Success", "Impression updated successfully!");
-    } catch (error) {
-      console.error("Error updating impression:", error);
-      Alert.alert("Error", "Failed to update impression. Please try again.");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedImpression) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    Alert.alert(
-      "Delete Impression",
-      "Are you sure you want to delete this spiritual impression? This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteImpression(selectedImpression.id);
-              setModalVisible(false);
-              await loadImpressions();
-              Alert.alert("Success", "Impression deleted successfully.");
-            } catch (error) {
-              console.error("Error deleting impression:", error);
-              Alert.alert(
-                "Error",
-                "Failed to delete impression. Please try again."
-              );
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const closeModal = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setModalVisible(false);
-    setSelectedImpression(null);
+    router.push({
+      pathname: "/(tabs)/insights/impressionForm",
+      params: {
+        impression: JSON.stringify(impression),
+      },
+    });
   };
 
   const handleFilterPress = () => {
@@ -331,7 +261,7 @@ export default function Insights() {
                 renderItem={renderImpression}
                 contentContainerStyle={[
                   styles.listContainer,
-                  { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+                  { paddingBottom: getTabBarPadding(insets.bottom) },
                 ]}
                 showsVerticalScrollIndicator={false}
               />
@@ -388,69 +318,6 @@ export default function Insights() {
               </Text>
             </View>
           )}
-          {/* Edit Modal */}
-          <Modal
-            animationType='fade'
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={closeModal}
-          >
-            <TouchableOpacity
-              style={styles.modalOverlay}
-              activeOpacity={1}
-              onPress={closeModal}
-            >
-              <KeyboardAvoidingView
-                style={styles.keyboardAvoidingView}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-              >
-                <TouchableOpacity
-                  style={styles.modalContent}
-                  activeOpacity={1}
-                  onPress={(e) => e.stopPropagation()}
-                >
-                  {/* Combined Close and Delete button */}
-                  <View style={styles.combinedButtonContainer}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={handleDelete}
-                    >
-                      <Ionicons
-                        name='trash-outline'
-                        size={18}
-                        color={theme.colors.error}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={closeModal}
-                    >
-                      <Text
-                        style={[
-                          styles.closeButtonText,
-                          { color: theme.colors.textMuted },
-                        ]}
-                      >
-                        ✕
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {selectedImpression && (
-                    <NewImpressionForm
-                      isEdit={true}
-                      initialDescription={selectedImpression.description}
-                      initialDateTime={selectedImpression.dateTime}
-                      initialCategories={selectedImpression.categories}
-                      onUpdate={handleUpdate}
-                      onSuccess={() => {}}
-                    />
-                  )}
-                </TouchableOpacity>
-              </KeyboardAvoidingView>
-            </TouchableOpacity>
-          </Modal>
 
           {/* Filter Modal */}
           <FilterModal
@@ -513,51 +380,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     lineHeight: 22,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-  },
-  modalContent: {
-    backgroundColor: "transparent",
-    alignItems: "stretch",
-    width: "90%",
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
-    padding: 10,
-    borderRadius: 10,
-  },
-  combinedButtonContainer: {
-    position: "absolute",
-    top: 13,
-    right: 15,
-    zIndex: 1,
-    flexDirection: "row",
-    gap: 10,
-  },
-  actionButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
   },
   filterButton: {
     width: 44,

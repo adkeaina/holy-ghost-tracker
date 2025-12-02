@@ -26,7 +26,7 @@ import {
 import BackgroundGradient from "@/src/components/BackgroundGradient";
 import GlassyCard from "@/src/components/GlassyCard";
 import FeedbackFAB from "@/src/components/FeedbackFAB";
-import { useTheme } from "@/src/theme";
+import { useTheme, getTabBarPadding } from "@/src/theme";
 import { supabase } from "@/src/utils/supabase";
 
 const NOTIFICATION_INTERVALS = [
@@ -198,7 +198,7 @@ export default function Profile() {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+            { paddingBottom: getTabBarPadding(insets.bottom) },
           ]}
         >
           {/* Header */}

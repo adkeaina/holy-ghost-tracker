@@ -3,6 +3,7 @@ import { StyleSheet, ViewStyle, View, ViewProps } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../theme";
+import { Platform } from "react-native";
 
 interface GlassyCardProps extends ViewProps {
   children?: React.ReactNode;
@@ -27,33 +28,51 @@ export default function GlassyCard({
   // Adjust tint based on theme mode
   const blurTint = theme.colors.background === "#FAFAFA" ? "light" : "dark";
 
+  // iOS: Use liquid glass effect
+  if (Platform.OS === "ios") {
+    return (
+      <View style={[styles.container, { borderRadius }, style]} {...props}>
+        <BlurView
+          intensity={intensity}
+          tint={blurTint}
+          style={[styles.blurView, { borderRadius }]}
+        >
+          <LinearGradient
+            colors={[
+              theme.colors.background === "#FAFAFA"
+                ? "rgba(255, 255, 255, 0.4)"
+                : "rgba(255, 255, 255, 0.1)",
+              theme.colors.background === "#FAFAFA"
+                ? "rgba(255, 255, 255, 0.15)"
+                : "rgba(255, 255, 255, 0.05)",
+              theme.colors.background === "#FAFAFA"
+                ? "rgba(255, 255, 255, 0.05)"
+                : "rgba(255, 255, 255, 0.02)",
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.gradientOverlay, { borderRadius }]}
+          />
+          <View style={[styles.content, { borderRadius, padding }]}>
+            {children}
+          </View>
+        </BlurView>
+      </View>
+    );
+  }
+
+  // Other platforms: Simple white background
   return (
-    <View style={[styles.container, { borderRadius }, style]} {...props}>
-      <BlurView
-        intensity={intensity}
-        tint={blurTint}
-        style={[styles.blurView, { borderRadius }]}
-      >
-        <LinearGradient
-          colors={[
-            theme.colors.background === "#FAFAFA"
-              ? "rgba(255, 255, 255, 0.4)"
-              : "rgba(255, 255, 255, 0.1)",
-            theme.colors.background === "#FAFAFA"
-              ? "rgba(255, 255, 255, 0.15)"
-              : "rgba(255, 255, 255, 0.05)",
-            theme.colors.background === "#FAFAFA"
-              ? "rgba(255, 255, 255, 0.05)"
-              : "rgba(255, 255, 255, 0.02)",
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.gradientOverlay, { borderRadius }]}
-        />
-        <View style={[styles.content, { borderRadius, padding }]}>
-          {children}
-        </View>
-      </BlurView>
+    <View
+      style={[
+        styles.container,
+        styles.simpleBackground,
+        { borderRadius, padding },
+        style,
+      ]}
+      {...props}
+    >
+      {children}
     </View>
   );
 }
@@ -98,5 +117,10 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  simpleBackground: {
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

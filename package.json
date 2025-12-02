@@ -9,10 +9,12 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/ui": "~0.2.0-beta.7",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "5.0.1",
+    "@react-native-google-signin/google-signin": "^16.0.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/native": "^7.1.8",
     "@supabase/supabase-js": "^2.78.0",
@@ -21,6 +23,7 @@
     "expo-auth-session": "~7.0.9",
     "expo-blur": "~15.0.7",
     "expo-dev-client": "~6.0.18",
+    "expo-glass-effect": "~0.1.7",
     "expo-haptics": "~15.0.7",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.8",
