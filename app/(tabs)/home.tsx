@@ -32,7 +32,7 @@ import Impression from "@/src/components/Impression";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
 import GlassyCard from "@/src/components/GlassyCard";
 import FeedbackFAB from "@/src/components/FeedbackFAB";
-import { useTheme } from "@/src/theme";
+import { useTheme, getTabBarPadding } from "@/src/theme";
 
 const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
@@ -163,7 +163,7 @@ export default function Home() {
             style={styles.scrollView}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+              { paddingBottom: getTabBarPadding(insets.bottom) },
             ]}
             keyboardShouldPersistTaps='handled'
             showsVerticalScrollIndicator={false}
@@ -255,10 +255,12 @@ export default function Home() {
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                 Add New Impression
               </Text>
-              <NewImpressionForm
-                onSuccess={loadLastImpression}
-                onDescriptionFocus={scrollToBottom}
-              />
+              <GlassyCard style={styles.newImpressionFormCard}>
+                <NewImpressionForm
+                  onSuccess={loadLastImpression}
+                  onDescriptionFocus={scrollToBottom}
+                />
+              </GlassyCard>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -332,5 +334,9 @@ const styles = StyleSheet.create({
   },
   testButtonContainer: {
     gap: 10,
+  },
+  newImpressionFormCard: {
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import * as AppleAuthentication from "expo-apple-authentication";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  isSuccessResponse,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
 import { useTheme } from "@/src/theme";
 import { supabase } from "@/src/utils/supabase";
@@ -20,6 +26,15 @@ import { supabase } from "@/src/utils/supabase";
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const { theme } = useTheme();
+
+  // Configure Google Sign-in
+  useEffect(() => {
+    GoogleSignin.configure({
+      scopes: ["https://www.googleapis.com/auth/userinfo.email"],
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    });
+  }, []);
 
   // Native Apple Sign In for iOS
   const handleNativeAppleSignIn = async () => {
@@ -72,7 +87,7 @@ export default function Index() {
         throw new Error("No identityToken received from Apple.");
       }
 
-      const { data, error } = await supabase.auth.signInWithIdToken({
+      const { error } = await supabase.auth.signInWithIdToken({
         provider: "apple",
         token: credential.identityToken,
       });
@@ -173,6 +188,97 @@ export default function Index() {
     }
   };
 
+  // Google Sign In
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      // Verify Supabase configuration before proceeding
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        const missing = [];
+        if (!supabaseUrl) missing.push("EXPO_PUBLIC_SUPABASE_URL");
+        if (!supabaseKey) missing.push("EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+        throw new Error(
+          `Supabase configuration is missing: ${missing.join(
+            ", "
+          )}. Please check your .env file and restart Expo.`
+        );
+      }
+
+      // Check if Google Sign-in is configured
+      const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+      const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+
+      if (!webClientId || (Platform.OS === "ios" && !iosClientId)) {
+        throw new Error(
+          "Google Sign-in is not configured. Please set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID and EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID in your .env file."
+        );
+      }
+
+      // Check for Play Services (Android only)
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices();
+      }
+
+      const response = await GoogleSignin.signIn();
+
+      if (isSuccessResponse(response) && response.data.idToken) {
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: response.data.idToken,
+        });
+
+        if (error) {
+          // Provide more helpful error messages
+          if (
+            error.message?.includes("Provider") &&
+            error.message?.includes("not enabled")
+          ) {
+            throw new Error(
+              "Google authentication is not enabled in your Supabase project. Please enable it in your Supabase dashboard under Authentication > Providers > Google."
+            );
+          }
+          if (error.message?.includes("Network request failed")) {
+            throw new Error(
+              "Network connection failed. Please check your internet connection and ensure your Supabase project is configured correctly."
+            );
+          }
+          throw error;
+        }
+      } else {
+        throw new Error("No idToken received from Google.");
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.IN_PROGRESS) {
+        // Operation is in progress already - don't show error
+        setIsLoading(false);
+        return;
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert(
+          "Sign In Error",
+          "Google Play Services is not available or outdated. Please update Google Play Services."
+        );
+      } else if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User canceled the sign-in flow - don't show an error
+      } else {
+        const errorMessage =
+          error.message ||
+          (error instanceof Error ? error.message : "Unknown error occurred");
+        Alert.alert(
+          "Sign In Error",
+          errorMessage ||
+            "There was an error signing in with Google. Please try again."
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Test user sign in (dev only)
   const handleTestUserSignIn = async () => {
     setIsLoading(true);
@@ -241,7 +347,7 @@ export default function Index() {
 
           {/* Sign In Button */}
           <View style={styles.signInContainer}>
-            {Platform.OS === "ios" ? (
+            {Platform.OS === "ios" && (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={
                   AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
@@ -253,33 +359,16 @@ export default function Index() {
                 style={styles.nativeAppleButton}
                 onPress={handleNativeAppleSignIn}
               />
-            ) : (
-              <TouchableOpacity
-                style={[
-                  styles.appleButton,
-                  {
-                    backgroundColor: theme.colors.text,
-                    borderColor: theme.colors.border,
-                  },
-                  isLoading && styles.buttonDisabled,
-                ]}
-                onPress={handleOAuthAppleSignIn}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color={theme.colors.background} />
-                ) : (
-                  <Text
-                    style={[
-                      styles.appleButtonText,
-                      { color: theme.colors.background },
-                    ]}
-                  >
-                    Continue with Apple
-                  </Text>
-                )}
-              </TouchableOpacity>
             )}
+
+            {/* Google Sign In Button */}
+            <GoogleSigninButton
+              size={GoogleSigninButton.Size.Wide}
+              color={GoogleSigninButton.Color.Dark}
+              disabled={isLoading}
+              onPress={handleGoogleSignIn}
+              style={styles.googleButton}
+            />
 
             {/* Test User Sign In (Dev Only) */}
             {process.env.EXPO_PUBLIC_NODE_ENV === "dev" && (
@@ -369,6 +458,12 @@ const styles = StyleSheet.create({
   nativeAppleButton: {
     width: "100%",
     height: 56,
+    marginBottom: 12,
+  },
+  googleButton: {
+    width: "100%",
+    height: 56,
+    marginTop: 12,
   },
   appleButton: {
     borderRadius: 12,

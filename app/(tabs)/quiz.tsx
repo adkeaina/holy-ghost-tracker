@@ -10,6 +10,7 @@ import QuizSetup from "@/src/components/QuizSetup";
 import QuizQuestionScreen from "@/src/components/QuizQuestionScreen";
 import QuizResults from "@/src/components/QuizResults";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
+import { getTabBarPadding } from "@/src/theme";
 
 export default function Quiz() {
   const [quizState, setQuizState] = useState<"setup" | "question" | "result">(
@@ -59,7 +60,7 @@ export default function Quiz() {
         <View
           style={[
             styles.contentWrapper,
-            { paddingBottom: Math.max(insets.bottom, 20) + 60 },
+            { paddingBottom: getTabBarPadding(insets.bottom) },
           ]}
         >
           {quizState === "setup" && (
