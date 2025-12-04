@@ -209,14 +209,16 @@ export default function Insights() {
                 <Text style={[styles.title, { color: theme.colors.text }]}>
                   All Impressions 🕊️
                 </Text>
-                <Text
-                  style={[styles.subtitle, { color: theme.colors.textMuted }]}
-                >
-                  {filteredImpressions.length} of {impressions.length}{" "}
-                  impression
-                  {impressions.length !== 1 ? "s" : ""}
-                  {hasActiveFilters() && " (filtered)"}
-                </Text>
+                {hasActiveFilters() && (
+                  <Text
+                    style={[styles.subtitle, { color: theme.colors.textMuted }]}
+                  >
+                    {filteredImpressions.length} of {impressions.length}{" "}
+                    impression
+                    {impressions.length !== 1 ? "s" : ""}
+                    {hasActiveFilters() && " (filtered)"}
+                  </Text>
+                )}
               </View>
               <TouchableOpacity
                 style={[
