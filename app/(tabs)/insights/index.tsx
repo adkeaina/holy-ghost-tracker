@@ -154,22 +154,26 @@ export default function Insights() {
     }
   };
 
-  const handleImpressionPress = (impression: SpiritualImpression) => {
-    if (expandedImpression?.id === impression.id) {
-      setExpandedImpression(null);
-    } else {
-      setExpandedImpression(impression);
-    }
-  };
+  const handleImpressionPress = useCallback(
+    (impression: SpiritualImpression) => {
+      setExpandedImpression((prev) =>
+        prev?.id === impression.id ? null : impression
+      );
+    },
+    []
+  );
 
-  const handleImpressionLongPress = (impression: SpiritualImpression) => {
-    router.push({
-      pathname: "/(tabs)/insights/impressionForm",
-      params: {
-        impression: JSON.stringify(impression),
-      },
-    });
-  };
+  const handleImpressionLongPress = useCallback(
+    (impression: SpiritualImpression) => {
+      router.push({
+        pathname: "/(tabs)/insights/impressionForm",
+        params: {
+          impression: JSON.stringify(impression),
+        },
+      });
+    },
+    []
+  );
 
   const handleFilterPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -192,17 +196,22 @@ export default function Insights() {
     );
   };
 
-  const renderImpression = ({ item }: { item: SpiritualImpression }) => (
-    <View style={styles.impressionContainer}>
-      <Impression
-        impression={item}
-        onPress={handleImpressionPress}
-        onLongPress={handleImpressionLongPress}
-        expanded={expandedImpression?.id === item.id}
-        activeOpacity={0.2}
-      />
-    </View>
+  const renderImpression = useCallback(
+    ({ item }: { item: SpiritualImpression }) => (
+      <View style={styles.impressionContainer}>
+        <Impression
+          impression={item}
+          onPress={handleImpressionPress}
+          onLongPress={handleImpressionLongPress}
+          expanded={expandedImpression?.id === item.id}
+          activeOpacity={0.2}
+        />
+      </View>
+    ),
+    [handleImpressionPress, handleImpressionLongPress, expandedImpression?.id]
   );
+
+  const keyExtractor = useCallback((item: SpiritualImpression) => item.id, []);
 
   return (
     <BackgroundGradient>
@@ -257,13 +266,18 @@ export default function Insights() {
             filteredImpressions.length > 0 ? (
               <FlatList
                 data={filteredImpressions}
-                keyExtractor={(item) => item.id}
+                keyExtractor={keyExtractor}
                 renderItem={renderImpression}
                 contentContainerStyle={[
                   styles.listContainer,
                   { paddingBottom: getTabBarPadding(insets.bottom) },
                 ]}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                updateCellsBatchingPeriod={50}
+                windowSize={10}
               />
             ) : (
               <View style={styles.emptyContainer}>

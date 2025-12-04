@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
 import { SpiritualImpression, ImpressionCategory } from "../types";
@@ -18,7 +18,7 @@ interface ImpressionProps {
   activeOpacity?: number;
 }
 
-export default function Impression({
+function Impression({
   impression,
   onPress,
   onLongPress,
@@ -32,10 +32,17 @@ export default function Impression({
   >([]);
   const { theme } = useTheme();
 
+  // Memoize category IDs string to compare by content, not reference
+  const categoryIdsKey = useMemo(
+    () => JSON.stringify(impression?.categories || []),
+    [impression?.categories]
+  );
+
   useEffect(() => {
     const loadCategories = async () => {
-      if (impression?.categories && impression.categories.length > 0) {
-        const categories = await resolveCategoryIds(impression.categories);
+      const categoryIds = impression?.categories || [];
+      if (categoryIds.length > 0) {
+        const categories = await resolveCategoryIds(categoryIds);
         setResolvedCategories(categories);
       } else {
         setResolvedCategories([]);
@@ -43,7 +50,31 @@ export default function Impression({
     };
 
     loadCategories();
-  }, [impression?.categories]);
+  }, [categoryIdsKey, impression?.categories]);
+
+  // All hooks must be called before any early returns
+  const handlePress = useCallback(() => {
+    if (impression) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress?.(impression);
+    }
+  }, [impression, onPress]);
+
+  const handleLongPress = useCallback(() => {
+    if (impression) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onLongPress?.(impression);
+    }
+  }, [impression, onLongPress]);
+
+  const formattedDateTime = useMemo(
+    () => (impression ? formatDateTime(impression.dateTime) : ""),
+    [impression?.dateTime]
+  );
+
+  const CardComponent = onPress || onLongPress ? TouchableOpacity : View;
+
+  // Early returns after all hooks
   if (!impression && showEmptyState) {
     return (
       <GlassyCard style={styles.impressionCard}>
@@ -60,18 +91,10 @@ export default function Impression({
     return null;
   }
 
-  const CardComponent = onPress || onLongPress ? TouchableOpacity : View;
-
   return (
     <CardComponent
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress?.(impression);
-      }}
-      onLongPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onLongPress?.(impression);
-      }}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
       activeOpacity={activeOpacity}
     >
       <GlassyCard style={styles.impressionCard}>
@@ -99,7 +122,7 @@ export default function Impression({
           <Text
             style={[styles.impressionDate, { color: theme.colors.textMuted }]}
           >
-            {formatDateTime(impression.dateTime)}
+            {formattedDateTime}
           </Text>
         </View>
       </GlassyCard>
@@ -135,4 +158,20 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
   },
+});
+
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(Impression, (prevProps, nextProps) => {
+  // Custom comparison function for better performance
+  return (
+    prevProps.impression?.id === nextProps.impression?.id &&
+    prevProps.expanded === nextProps.expanded &&
+    prevProps.activeOpacity === nextProps.activeOpacity &&
+    prevProps.showEmptyState === nextProps.showEmptyState &&
+    prevProps.emptyStateText === nextProps.emptyStateText &&
+    prevProps.impression?.description === nextProps.impression?.description &&
+    prevProps.impression?.dateTime === nextProps.impression?.dateTime &&
+    JSON.stringify(prevProps.impression?.categories) ===
+      JSON.stringify(nextProps.impression?.categories)
+  );
 });
