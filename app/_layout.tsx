@@ -1,10 +1,11 @@
 import { ThemeProvider } from "@/src/theme";
-import AuthProvider from "@/src/utils/authProvider";
+import { AuthProvider } from "@/src/context/AuthContext";
 import { supabase } from "@/src/utils/supabase";
+import { Profile } from "@/src/context/AuthContext";
 import { Session } from "@supabase/supabase-js";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
-import { AppState, View, Text, StyleSheet } from "react-native";
+import { AppState, View, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { getCategories } from "@/src/utils/storage";
 import { useTheme } from "@/src/theme";
@@ -12,6 +13,7 @@ import { useTheme } from "@/src/theme";
 function RootLayoutContent() {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -20,6 +22,7 @@ function RootLayoutContent() {
       .getSession()
       .then(({ data: { session }, error }) => {
         if (error) {
+          // Handle session retrieval errors silently
           console.log("Session retrieval error handled:", error);
           setSession(null);
         } else {
@@ -28,6 +31,7 @@ function RootLayoutContent() {
         setIsLoading(false);
       })
       .catch((error) => {
+        // Handle any unexpected errors during session retrieval
         console.log("Unexpected session error handled:", error);
         setSession(null);
         setIsLoading(false);
@@ -36,10 +40,11 @@ function RootLayoutContent() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       try {
         // Handle refresh token errors silently
         if (event === "TOKEN_REFRESHED" && !session) {
+          // Token refresh failed, user needs to re-authenticate
           setSession(null);
           setIsLoading(false);
           return;
@@ -47,16 +52,8 @@ function RootLayoutContent() {
 
         setSession(session);
         setIsLoading(false);
-
-        // Initialize categories when user logs in
-        if (session) {
-          try {
-            await getCategories();
-          } catch (error) {
-            // Silently handle initialization errors
-          }
-        }
       } catch (error) {
+        // Silently handle auth errors to prevent console.error
         console.log("Auth state change error handled:", error);
         setSession(null);
         setIsLoading(false);
@@ -72,6 +69,7 @@ function RootLayoutContent() {
           supabase.auth.stopAutoRefresh();
         }
       } catch (error) {
+        // Silently handle auto-refresh errors
         console.log("Auto-refresh error handled:", error);
       }
     };
@@ -87,18 +85,33 @@ function RootLayoutContent() {
     };
   }, []);
 
-  // Show loading screen while checking auth status
+  useEffect(() => {
+    if (!session || !session.user) {
+      setProfile(null);
+      return;
+    }
+
+    // Initialize categories when user logs in
+    if (session) {
+      getCategories().catch(() => {
+        // Silently handle initialization errors
+      });
+    }
+
+    // Extract email directly from session user
+    setProfile({
+      email: session.user.email || "",
+    });
+  }, [session]);
+
+  // Show loading spinner while checking session
   if (isLoading) {
     return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: theme.colors.background },
-        ]}
-      >
-        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-          Loading...
-        </Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator
+          size='large'
+          color={theme.colors.primary || "#3B82F6"}
+        />
         <StatusBar
           style={theme.colors.background === "#FAFAFA" ? "dark" : "light"}
         />
@@ -108,7 +121,7 @@ function RootLayoutContent() {
 
   return (
     <>
-      <AuthProvider>
+      <AuthProvider profile={profile} isLoading={isLoading}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -137,15 +150,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: "500",
-  },
-});

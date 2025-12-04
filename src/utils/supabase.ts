@@ -1,34 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import "react-native-url-polyfill/auto";
+import { ExpoStorage } from "../services/expoStorage";
 
-const ExpoWebSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return AsyncStorage.getItem(key);
-  },
-  setItem: (key: string, value: string) => {
-    return AsyncStorage.setItem(key, value);
-  },
-  removeItem: (key: string) => {
-    return AsyncStorage.removeItem(key);
-  },
-};
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
-
-// Validate environment variables
-if (!supabaseUrl || !supabaseKey) {
-  console.error(
-    "⚠️ Supabase environment variables are missing! Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY in your .env file."
-  );
+if (!supabaseUrl || !supabasePublishableKey) {
+  throw new Error("Missing Supabase environment variables");
 }
 
-// Note: Localhost URLs won't work in Expo Go - must use computer's local IP
-
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
-    storage: ExpoWebSecureStoreAdapter,
+    storage: ExpoStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
