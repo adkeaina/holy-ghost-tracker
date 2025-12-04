@@ -7,7 +7,6 @@ import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { AppState, View, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { getCategories } from "@/src/utils/storage";
 import { useTheme } from "@/src/theme";
 
 function RootLayoutContent() {
@@ -89,13 +88,6 @@ function RootLayoutContent() {
     if (!session || !session.user) {
       setProfile(null);
       return;
-    }
-
-    // Initialize categories when user logs in
-    if (session) {
-      getCategories().catch(() => {
-        // Silently handle initialization errors
-      });
     }
 
     // Extract email directly from session user

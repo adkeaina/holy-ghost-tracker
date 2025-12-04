@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,8 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 
-import {
-  ImpressionCategory,
-  QuizQuestion,
-  SpiritualImpression,
-} from "../types";
-import { getCategories, getImpressions } from "../utils/storage";
+import { QuizQuestion, SpiritualImpression } from "../types";
+import { useImpressions } from "../context/ImpressionsContext";
 import CategoryList from "./CategoryList";
 import { generateQuiz } from "../utils/quizGenerator";
 import { useTheme } from "../theme";
@@ -28,33 +24,15 @@ interface QuizSetupProps {
 
 export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
   const { theme } = useTheme();
+  const { impressions, categories } = useImpressions();
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [categories, setCategories] = useState<ImpressionCategory[]>([]);
   const [questionCount, setQuestionCount] = useState(5);
   const [timeLimit, setTimeLimit] = useState(0); // 0 for unlimited
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
-  const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
   const [quizType, setQuizType] = useState<"impressions" | "custom">(
     "impressions"
   );
   const [customPrompt, setCustomPrompt] = useState("");
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [loadedCategories, loadedImpressions] = await Promise.all([
-        getCategories(),
-        getImpressions(),
-      ]);
-      setCategories(loadedCategories);
-      setImpressions(loadedImpressions);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-  };
 
   const handleCategorySelection = (categories: number[]) => {
     setSelectedCategories(categories);

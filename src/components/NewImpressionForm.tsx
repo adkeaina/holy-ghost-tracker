@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import DateTimePicker from "./DateTimePicker";
-import { saveImpression } from "../utils/storage";
+import { useImpressions } from "../context/ImpressionsContext";
 import CategoryList from "./CategoryList";
 import { useTheme } from "../theme";
 import { DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -41,6 +41,7 @@ export default function NewImpressionForm({
   onUpdate,
   onDescriptionFocus,
 }: NewImpressionFormProps) {
+  const { saveImpression } = useImpressions();
   const [description, setDescription] = useState(initialDescription);
   const [selectedDate, setSelectedDate] = useState<Date>(
     initialDateTime ? new Date(initialDateTime) : new Date()

@@ -16,15 +16,15 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { SpiritualImpression, ImpressionCategory } from "@/src/types";
-import { getImpressions } from "@/src/utils/storage";
+import { SpiritualImpression } from "@/src/types";
+import { useImpressions } from "@/src/context/ImpressionsContext";
 import Impression from "@/src/components/Impression";
 import FilterModal, { FilterOptions } from "@/src/components/FilterModal";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
 import { useTheme, getTabBarPadding } from "@/src/theme";
 
 export default function Insights() {
-  const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
+  const { impressions, refreshImpressions } = useImpressions();
   const [expandedImpression, setExpandedImpression] =
     useState<SpiritualImpression | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -38,8 +38,8 @@ export default function Insights() {
 
   useFocusEffect(
     useCallback(() => {
-      loadImpressions();
-    }, [])
+      refreshImpressions();
+    }, [refreshImpressions])
   );
 
   // Filter impressions based on current filters
@@ -139,20 +139,6 @@ export default function Insights() {
 
     return filtered;
   }, [impressions, filters]);
-
-  const loadImpressions = async () => {
-    try {
-      const allImpressions = await getImpressions();
-      // Sort by dateTime, most recent first
-      const sorted = allImpressions.sort(
-        (a, b) =>
-          new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-      );
-      setImpressions(sorted);
-    } catch (error) {
-      console.error("Error loading impressions:", error);
-    }
-  };
 
   const handleImpressionPress = useCallback(
     (impression: SpiritualImpression) => {
