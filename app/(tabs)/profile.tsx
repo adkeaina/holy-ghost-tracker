@@ -380,20 +380,13 @@ export default function Profile() {
 
           {/* Logout Section */}
           <View style={styles.section}>
-            <GlassyCard style={styles.card}>
-              <TouchableOpacity
-                style={[
-                  styles.logoutButton,
-                  { borderColor: theme.colors.textMuted },
-                ]}
-                onPress={handleLogout}
-                disabled={isLoading}
-              >
+            <TouchableOpacity onPress={handleLogout} disabled={isLoading}>
+              <GlassyCard style={styles.card}>
                 <Text style={[styles.logoutButtonText, { color: "#e74c3c" }]}>
                   Sign Out
                 </Text>
-              </TouchableOpacity>
-            </GlassyCard>
+              </GlassyCard>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
