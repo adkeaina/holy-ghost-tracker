@@ -389,9 +389,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     position: "relative",
   },
-  filterButtonActive: {
-    backgroundColor: "#ddeaf7",
-  },
   filterIndicator: {
     position: "absolute",
     top: 8,

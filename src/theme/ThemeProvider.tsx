@@ -13,7 +13,6 @@ interface ThemeContextType {
   theme: Theme;
   themeMode: ThemeMode;
   toggleTheme: () => void;
-  setThemeMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -66,18 +65,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return () => subscription?.remove();
   }, []);
 
-  const setThemeMode = async (mode: ThemeMode) => {
+  const toggleTheme = () => {
+    const newMode = themeMode === "light" ? "dark" : "light";
     try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
-      setThemeModeState(mode);
+      AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
+      setThemeModeState(newMode);
     } catch (error) {
       console.error("Error saving theme preference:", error);
     }
-  };
-
-  const toggleTheme = () => {
-    const newMode = themeMode === "light" ? "dark" : "light";
-    setThemeMode(newMode);
   };
 
   const theme = themeMode === "dark" ? darkTheme : lightTheme;
@@ -86,7 +81,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     theme,
     themeMode,
     toggleTheme,
-    setThemeMode,
   };
 
   // Don't render children until theme is loaded to prevent flash
@@ -105,22 +99,4 @@ export const useTheme = (): ThemeContextType => {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
-};
-
-// Hook to get just the theme object (for convenience)
-export const useThemeColors = () => {
-  const { theme } = useTheme();
-  return theme.colors;
-};
-
-// Hook to get just the theme spacing
-export const useThemeSpacing = () => {
-  const { theme } = useTheme();
-  return theme.spacing;
-};
-
-// Hook to get just the theme typography
-export const useThemeTypography = () => {
-  const { theme } = useTheme();
-  return theme.typography;
 };

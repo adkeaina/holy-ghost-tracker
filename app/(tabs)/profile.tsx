@@ -15,11 +15,7 @@ import {
 } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
-import { UserProfile, NotificationSettings } from "@/src/types";
-import {
-  getUserProfile,
-  updateNotificationSettings,
-} from "@/src/utils/storage";
+import { NotificationSettings } from "@/src/types";
 import {
   scheduleNotification,
   requestNotificationPermissions,
@@ -30,6 +26,7 @@ import FeedbackFAB from "@/src/components/FeedbackFAB";
 import { useTheme, getTabBarPadding } from "@/src/theme";
 import { supabase } from "@/src/utils/supabase";
 import { useAuth } from "@/src/context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const NOTIFICATION_INTERVALS = [
   { label: "1 Day", value: 1 as const },
@@ -39,35 +36,52 @@ const NOTIFICATION_INTERVALS = [
   { label: "1 Month", value: 30 as const },
 ];
 
+const NOTIFICATION_ENABLED_KEY = "notification_enabled";
+const NOTIFICATION_INTERVAL_DAYS_KEY = "notification_interval_days";
+
 export default function Profile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings>({
+      enabled: false,
+      intervalDays: 7,
+    });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const { theme, themeMode, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { profile: authProfile } = useAuth();
 
   useFocusEffect(
     useCallback(() => {
-      loadProfile();
+      loadNotificationSettings();
     }, [])
   );
 
-  const loadProfile = async () => {
+  const loadNotificationSettings = async () => {
     setIsLoadingProfile(true);
     try {
-      const userProfile = await getUserProfile();
-      setProfile(userProfile);
+      const [enabledStr, intervalDaysStr] = await Promise.all([
+        AsyncStorage.getItem(NOTIFICATION_ENABLED_KEY),
+        AsyncStorage.getItem(NOTIFICATION_INTERVAL_DAYS_KEY),
+      ]);
+
+      const enabled = enabledStr === "true";
+      const intervalDays = (
+        intervalDaysStr ? parseInt(intervalDaysStr, 10) : 7
+      ) as 1 | 3 | 7 | 14 | 30;
+
+      setNotificationSettings({
+        enabled,
+        intervalDays,
+      });
     } catch (error) {
-      console.error("Error loading profile:", error);
+      console.error("Error loading notification settings:", error);
     } finally {
       setIsLoadingProfile(false);
     }
   };
 
   const handleNotificationToggle = async (enabled: boolean) => {
-    if (!profile) return;
-
     if (enabled) {
       const hasPermission = await requestNotificationPermissions();
       if (!hasPermission) {
@@ -82,17 +96,14 @@ export default function Profile() {
     setIsLoading(true);
     try {
       const newSettings: NotificationSettings = {
-        ...profile.notificationSettings,
+        ...notificationSettings,
         enabled,
       };
 
-      await updateNotificationSettings(newSettings);
+      await AsyncStorage.setItem(NOTIFICATION_ENABLED_KEY, enabled.toString());
       await scheduleNotification(newSettings);
 
-      setProfile({
-        ...profile,
-        notificationSettings: newSettings,
-      });
+      setNotificationSettings(newSettings);
     } catch (error) {
       console.error("Error updating notifications:", error);
       Alert.alert(
@@ -105,26 +116,24 @@ export default function Profile() {
   };
 
   const handleIntervalChange = async (intervalDays: 1 | 3 | 7 | 14 | 30) => {
-    if (!profile) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLoading(true);
     try {
       const newSettings: NotificationSettings = {
-        ...profile.notificationSettings,
+        ...notificationSettings,
         intervalDays,
       };
 
-      await updateNotificationSettings(newSettings);
+      await AsyncStorage.setItem(
+        NOTIFICATION_INTERVAL_DAYS_KEY,
+        intervalDays.toString()
+      );
 
       if (newSettings.enabled) {
         await scheduleNotification(newSettings);
       }
 
-      setProfile({
-        ...profile,
-        notificationSettings: newSettings,
-      });
+      setNotificationSettings(newSettings);
     } catch (error) {
       console.error("Error updating interval:", error);
       Alert.alert(
@@ -293,13 +302,13 @@ export default function Profile() {
                       </Text>
                     </View>
                     <Switch
-                      value={profile?.notificationSettings.enabled || false}
+                      value={notificationSettings.enabled}
                       onValueChange={handleNotificationToggle}
-                      disabled={isLoading || !profile}
+                      disabled={isLoading}
                     />
                   </View>
 
-                  {profile?.notificationSettings.enabled && (
+                  {notificationSettings.enabled && (
                     <View style={styles.intervalSection}>
                       <Text
                         style={[
@@ -323,16 +332,16 @@ export default function Profile() {
                           key={interval.value}
                           style={[
                             styles.intervalOption,
-                            profile.notificationSettings.intervalDays ===
+                            notificationSettings.intervalDays ===
                               interval.value && styles.intervalOptionSelected,
                           ]}
                           onPress={() => handleIntervalChange(interval.value)}
-                          disabled={isLoading || !profile}
+                          disabled={isLoading}
                         >
                           <Text
                             style={[
                               styles.intervalOptionText,
-                              profile.notificationSettings.intervalDays ===
+                              notificationSettings.intervalDays ===
                                 interval.value &&
                                 styles.intervalOptionTextSelected,
                             ]}

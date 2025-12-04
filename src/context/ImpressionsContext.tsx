@@ -24,7 +24,6 @@ interface ImpressionsContextType {
 
   // Derived data
   isLoading: boolean;
-  error: string | null;
 
   // Actions
   refreshImpressions: (skipLoading?: boolean) => Promise<void>;
@@ -44,9 +43,7 @@ interface ImpressionsContextType {
   deleteCategory: (id: number) => Promise<void>;
 
   // Helper methods
-  getImpressionById: (id: string) => SpiritualImpression | undefined;
   getLastImpression: () => SpiritualImpression | null;
-  getImpressionsByCategory: (categoryId: number) => SpiritualImpression[];
 }
 
 const ImpressionsContext = createContext<ImpressionsContextType | undefined>(
@@ -61,7 +58,6 @@ export const ImpressionsProvider = ({ children }: ImpressionsProviderProps) => {
   const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
   const [categories, setCategories] = useState<ImpressionCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Initialize with data on mount
   useEffect(() => {
@@ -72,7 +68,6 @@ export const ImpressionsProvider = ({ children }: ImpressionsProviderProps) => {
     if (!skipLoading) {
       setIsLoading(true);
     }
-    setError(null);
 
     try {
       const [impressionsData, categoriesData] = await Promise.all([
@@ -89,9 +84,6 @@ export const ImpressionsProvider = ({ children }: ImpressionsProviderProps) => {
       setImpressions(sortedImpressions);
       setCategories(categoriesData);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch data";
-      setError(errorMessage);
       console.error("Error refreshing impressions:", err);
     } finally {
       if (!skipLoading) {
@@ -168,27 +160,14 @@ export const ImpressionsProvider = ({ children }: ImpressionsProviderProps) => {
     }
   };
 
-  const getImpressionById = (id: string): SpiritualImpression | undefined => {
-    return impressions.find((impression) => impression.id === id);
-  };
-
   const getLastImpression = (): SpiritualImpression | null => {
     return impressions.length > 0 ? impressions[0] : null;
-  };
-
-  const getImpressionsByCategory = (
-    categoryId: number
-  ): SpiritualImpression[] => {
-    return impressions.filter((impression) =>
-      impression.categories.includes(categoryId)
-    );
   };
 
   const value: ImpressionsContextType = {
     impressions,
     categories,
     isLoading,
-    error,
     refreshImpressions,
     saveImpression,
     updateImpression,
@@ -196,9 +175,7 @@ export const ImpressionsProvider = ({ children }: ImpressionsProviderProps) => {
     saveCategory,
     updateCategory,
     deleteCategory,
-    getImpressionById,
     getLastImpression,
-    getImpressionsByCategory,
   };
 
   return (

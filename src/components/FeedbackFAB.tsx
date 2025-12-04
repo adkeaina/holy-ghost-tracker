@@ -15,6 +15,7 @@ import { submitFeedback } from "../utils/storage";
 import GlassyCard from "./GlassyCard";
 import { getTabBarPadding, useTheme } from "../theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../context/AuthContext";
 
 export default function FeedbackFAB() {
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
@@ -22,6 +23,7 @@ export default function FeedbackFAB() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { profile: authProfile } = useAuth();
 
   const handleFeedbackPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -43,9 +45,14 @@ export default function FeedbackFAB() {
       return;
     }
 
+    if (!authProfile?.email) {
+      Alert.alert("Error", "Unable to submit feedback. Please sign in again.");
+      return;
+    }
+
     setIsSubmittingFeedback(true);
     try {
-      await submitFeedback(feedbackText.trim());
+      await submitFeedback(feedbackText.trim(), authProfile.email);
       setFeedbackModalVisible(false);
       setFeedbackText("");
       Alert.alert(

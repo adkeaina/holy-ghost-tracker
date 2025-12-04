@@ -22,7 +22,6 @@ interface NewImpressionFormProps {
   initialDateTime?: string;
   initialCategories?: number[];
   isEdit?: boolean;
-  impressionId?: string;
   onUpdate?: (data: {
     description: string;
     dateTime: string;
@@ -37,7 +36,6 @@ export default function NewImpressionForm({
   initialDateTime,
   initialCategories = [],
   isEdit = false,
-  impressionId,
   onUpdate,
   onDescriptionFocus,
 }: NewImpressionFormProps) {
@@ -248,16 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  dateButton: {
-    borderWidth: 1,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 200,
-  },
-  dateButtonText: {
-    fontSize: 16,
-  },
   textInput: {
     borderWidth: 1,
     borderRadius: 10,
@@ -270,12 +258,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginHorizontal: 0,
-  },
-  submitButtonSecondary: {
-    backgroundColor: "#27ae60",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#95a5a6",
   },
   submitButtonText: {
     fontSize: 16,

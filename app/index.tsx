@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import * as Linking from "expo-linking";
 import * as AppleAuthentication from "expo-apple-authentication";
 import {
   GoogleSignin,
@@ -149,41 +148,6 @@ export default function Index() {
         );
       }
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // OAuth flow for Android and other platforms
-  const handleOAuthAppleSignIn = async () => {
-    setIsLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      // Get the redirect URL for OAuth callback
-      const redirectUrl = Linking.createURL("/");
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // The OAuth flow will open a browser and redirect back to the app
-      // The auth state change listener in AuthProvider will handle the session update
-      // Reset loading state - user will be redirected to browser
-      setIsLoading(false);
-    } catch (error: any) {
-      console.error("Error signing in with Apple:", error);
-      Alert.alert(
-        "Sign In Error",
-        error.message ||
-          "There was an error signing in with Apple. Please try again."
-      );
       setIsLoading(false);
     }
   };
@@ -465,29 +429,8 @@ const styles = StyleSheet.create({
     height: 56,
     marginTop: 12,
   },
-  appleButton: {
-    borderRadius: 12,
-    padding: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    minHeight: 56,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  appleButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
   },
   testButton: {
     borderRadius: 12,
