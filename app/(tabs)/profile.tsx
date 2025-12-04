@@ -93,22 +93,6 @@ export default function Profile() {
         ...profile,
         notificationSettings: newSettings,
       });
-
-      if (enabled) {
-        Alert.alert(
-          "Notifications Enabled",
-          `You'll receive reminders every ${
-            profile.notificationSettings.intervalDays
-          } day${
-            profile.notificationSettings.intervalDays > 1 ? "s" : ""
-          } to track your spiritual impressions.`
-        );
-      } else {
-        Alert.alert(
-          "Notifications Disabled",
-          "You will no longer receive reminders."
-        );
-      }
     } catch (error) {
       console.error("Error updating notifications:", error);
       Alert.alert(
@@ -141,15 +125,6 @@ export default function Profile() {
         ...profile,
         notificationSettings: newSettings,
       });
-
-      if (newSettings.enabled) {
-        Alert.alert(
-          "Reminder Updated",
-          `You'll now receive reminders every ${intervalDays} day${
-            intervalDays > 1 ? "s" : ""
-          }.`
-        );
-      }
     } catch (error) {
       console.error("Error updating interval:", error);
       Alert.alert(
@@ -321,15 +296,6 @@ export default function Profile() {
                       value={profile?.notificationSettings.enabled || false}
                       onValueChange={handleNotificationToggle}
                       disabled={isLoading || !profile}
-                      trackColor={{
-                        false: theme.colors.border,
-                        true: theme.colors.primary,
-                      }}
-                      thumbColor={
-                        profile?.notificationSettings.enabled
-                          ? theme.colors.celestialGold
-                          : theme.colors.textMuted
-                      }
                     />
                   </View>
 

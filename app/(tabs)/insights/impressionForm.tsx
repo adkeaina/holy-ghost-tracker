@@ -22,7 +22,8 @@ export default function ImpressionForm() {
   const [impression, setImpression] = useState<SpiritualImpression | null>(
     null
   );
-  const { updateImpression, deleteImpression, refreshImpressions } = useImpressions();
+  const { updateImpression, deleteImpression, refreshImpressions } =
+    useImpressions();
   const { theme } = useTheme();
 
   useEffect(() => {
