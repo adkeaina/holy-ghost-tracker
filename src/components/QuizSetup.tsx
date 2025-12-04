@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,8 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 
-import {
-  ImpressionCategory,
-  QuizQuestion,
-  SpiritualImpression,
-} from "../types";
-import { getCategories, getImpressions } from "../utils/storage";
+import { QuizQuestion, SpiritualImpression } from "../types";
+import { useImpressions } from "../context/ImpressionsContext";
 import CategoryList from "./CategoryList";
 import { generateQuiz } from "../utils/quizGenerator";
 import { useTheme } from "../theme";
@@ -28,33 +24,15 @@ interface QuizSetupProps {
 
 export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
   const { theme } = useTheme();
+  const { impressions, categories } = useImpressions();
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [categories, setCategories] = useState<ImpressionCategory[]>([]);
   const [questionCount, setQuestionCount] = useState(5);
   const [timeLimit, setTimeLimit] = useState(0); // 0 for unlimited
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
-  const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
   const [quizType, setQuizType] = useState<"impressions" | "custom">(
     "impressions"
   );
   const [customPrompt, setCustomPrompt] = useState("");
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [loadedCategories, loadedImpressions] = await Promise.all([
-        getCategories(),
-        getImpressions(),
-      ]);
-      setCategories(loadedCategories);
-      setImpressions(loadedImpressions);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-  };
 
   const handleCategorySelection = (categories: number[]) => {
     setSelectedCategories(categories);
@@ -168,7 +146,13 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
         <View>
           {/* Quiz Type */}
           <View style={styles.section}>
-            <View style={styles.segmentContainer}>
+            <View
+              style={[
+                styles.segmentContainer,
+                isGeneratingQuiz && styles.disabledContainer,
+              ]}
+              pointerEvents={isGeneratingQuiz ? "none" : "auto"}
+            >
               <TouchableOpacity
                 style={[
                   styles.segmentButton,
@@ -178,6 +162,7 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
                   ],
                 ]}
                 onPress={() => setQuizType("impressions")}
+                disabled={isGeneratingQuiz}
               >
                 <Text
                   style={[
@@ -188,6 +173,7 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
                           { color: theme.colors.buttonText },
                         ]
                       : { color: theme.colors.textMuted },
+                    isGeneratingQuiz && { opacity: 0.5 },
                   ]}
                 >
                   Impressions
@@ -202,6 +188,7 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
                   ],
                 ]}
                 onPress={() => setQuizType("custom")}
+                disabled={isGeneratingQuiz}
               >
                 <Text
                   style={[
@@ -212,6 +199,7 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
                           { color: theme.colors.buttonText },
                         ]
                       : { color: theme.colors.textMuted },
+                    isGeneratingQuiz && { opacity: 0.5 },
                   ]}
                 >
                   Custom
@@ -222,8 +210,17 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
 
           {/* Category Selection */}
           {quizType === "impressions" && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            <View
+              style={styles.section}
+              pointerEvents={isGeneratingQuiz ? "none" : "auto"}
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: theme.colors.text },
+                  isGeneratingQuiz && { opacity: 0.5 },
+                ]}
+              >
                 Categories
               </Text>
               <CategoryList
@@ -234,24 +231,48 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
             </View>
           )}
           {quizType === "custom" && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Custom</Text>
+            <View
+              style={styles.section}
+              pointerEvents={isGeneratingQuiz ? "none" : "auto"}
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: theme.colors.text },
+                  isGeneratingQuiz && { opacity: 0.5 },
+                ]}
+              >
+                Custom
+              </Text>
               <TextInput
-                style={styles.customQuestionsInput}
+                style={[
+                  styles.customQuestionsInput,
+                  isGeneratingQuiz && { opacity: 0.5 },
+                ]}
                 placeholder="Quiz me on Lehi's vision..."
                 value={customPrompt}
                 onChangeText={setCustomPrompt}
                 multiline
                 numberOfLines={6}
                 textAlignVertical='top'
+                editable={!isGeneratingQuiz}
               />
             </View>
           )}
         </View>
 
         {/* Question Count */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <View
+          style={styles.section}
+          pointerEvents={isGeneratingQuiz ? "none" : "auto"}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.colors.text },
+              isGeneratingQuiz && { opacity: 0.5 },
+            ]}
+          >
             Number of Questions
           </Text>
           <Slider
@@ -264,35 +285,60 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
             minimumTrackTintColor={theme.colors.primary}
             maximumTrackTintColor={theme.colors.border}
             thumbTintColor={theme.colors.primary}
+            disabled={isGeneratingQuiz}
           />
           <View style={styles.sliderLabels}>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               5
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               10
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               15
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               20
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               25
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               30
             </Text>
@@ -300,8 +346,17 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
         </View>
 
         {/* Time Limit */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <View
+          style={styles.section}
+          pointerEvents={isGeneratingQuiz ? "none" : "auto"}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.colors.text },
+              isGeneratingQuiz && { opacity: 0.5 },
+            ]}
+          >
             Time Limit
           </Text>
           <Slider
@@ -314,20 +369,35 @@ export default function QuizSetup({ onQuizGenerated }: QuizSetupProps) {
             minimumTrackTintColor={theme.colors.primary}
             maximumTrackTintColor={theme.colors.border}
             thumbTintColor={theme.colors.primary}
+            disabled={isGeneratingQuiz}
           />
           <View style={styles.sliderLabels}>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               No limit
             </Text>
-            <Text style={[styles.sliderEndLabel, { color: theme.colors.text }]}>
+            <Text
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.text },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
+            >
               {timeLimit > 0
                 ? `${timeLimit} minute${timeLimit !== 1 ? "s" : ""}`
                 : "No limit"}
             </Text>
             <Text
-              style={[styles.sliderEndLabel, { color: theme.colors.textMuted }]}
+              style={[
+                styles.sliderEndLabel,
+                { color: theme.colors.textMuted },
+                isGeneratingQuiz && { opacity: 0.5 },
+              ]}
             >
               20 min
             </Text>
@@ -485,5 +555,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 120,
     backgroundColor: "transparent",
+  },
+  disabledContainer: {
+    opacity: 0.5,
   },
 });

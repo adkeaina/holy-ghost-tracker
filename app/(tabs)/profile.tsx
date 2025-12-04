@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import {
   SafeAreaView,
@@ -14,11 +15,7 @@ import {
 } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
-import { UserProfile, NotificationSettings } from "@/src/types";
-import {
-  getUserProfile,
-  updateNotificationSettings,
-} from "@/src/utils/storage";
+import { NotificationSettings } from "@/src/types";
 import {
   scheduleNotification,
   requestNotificationPermissions,
@@ -28,6 +25,8 @@ import GlassyCard from "@/src/components/GlassyCard";
 import FeedbackFAB from "@/src/components/FeedbackFAB";
 import { useTheme, getTabBarPadding } from "@/src/theme";
 import { supabase } from "@/src/utils/supabase";
+import { useAuth } from "@/src/context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const NOTIFICATION_INTERVALS = [
   { label: "1 Day", value: 1 as const },
@@ -37,30 +36,52 @@ const NOTIFICATION_INTERVALS = [
   { label: "1 Month", value: 30 as const },
 ];
 
+const NOTIFICATION_ENABLED_KEY = "notification_enabled";
+const NOTIFICATION_INTERVAL_DAYS_KEY = "notification_interval_days";
+
 export default function Profile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings>({
+      enabled: false,
+      intervalDays: 7,
+    });
   const [isLoading, setIsLoading] = useState(false);
-  const { theme, themeMode, toggleTheme } = useTheme();
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { profile: authProfile } = useAuth();
 
   useFocusEffect(
     useCallback(() => {
-      loadProfile();
+      loadNotificationSettings();
     }, [])
   );
 
-  const loadProfile = async () => {
+  const loadNotificationSettings = async () => {
+    setIsLoadingProfile(true);
     try {
-      const userProfile = await getUserProfile();
-      setProfile(userProfile);
+      const [enabledStr, intervalDaysStr] = await Promise.all([
+        AsyncStorage.getItem(NOTIFICATION_ENABLED_KEY),
+        AsyncStorage.getItem(NOTIFICATION_INTERVAL_DAYS_KEY),
+      ]);
+
+      const enabled = enabledStr === "true";
+      const intervalDays = (
+        intervalDaysStr ? parseInt(intervalDaysStr, 10) : 7
+      ) as 1 | 3 | 7 | 14 | 30;
+
+      setNotificationSettings({
+        enabled,
+        intervalDays,
+      });
     } catch (error) {
-      console.error("Error loading profile:", error);
+      console.error("Error loading notification settings:", error);
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
   const handleNotificationToggle = async (enabled: boolean) => {
-    if (!profile) return;
-
     if (enabled) {
       const hasPermission = await requestNotificationPermissions();
       if (!hasPermission) {
@@ -75,33 +96,14 @@ export default function Profile() {
     setIsLoading(true);
     try {
       const newSettings: NotificationSettings = {
-        ...profile.notificationSettings,
+        ...notificationSettings,
         enabled,
       };
 
-      await updateNotificationSettings(newSettings);
+      await AsyncStorage.setItem(NOTIFICATION_ENABLED_KEY, enabled.toString());
       await scheduleNotification(newSettings);
 
-      setProfile({
-        ...profile,
-        notificationSettings: newSettings,
-      });
-
-      if (enabled) {
-        Alert.alert(
-          "Notifications Enabled",
-          `You'll receive reminders every ${
-            profile.notificationSettings.intervalDays
-          } day${
-            profile.notificationSettings.intervalDays > 1 ? "s" : ""
-          } to track your spiritual impressions.`
-        );
-      } else {
-        Alert.alert(
-          "Notifications Disabled",
-          "You will no longer receive reminders."
-        );
-      }
+      setNotificationSettings(newSettings);
     } catch (error) {
       console.error("Error updating notifications:", error);
       Alert.alert(
@@ -114,35 +116,24 @@ export default function Profile() {
   };
 
   const handleIntervalChange = async (intervalDays: 1 | 3 | 7 | 14 | 30) => {
-    if (!profile) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLoading(true);
     try {
       const newSettings: NotificationSettings = {
-        ...profile.notificationSettings,
+        ...notificationSettings,
         intervalDays,
       };
 
-      await updateNotificationSettings(newSettings);
+      await AsyncStorage.setItem(
+        NOTIFICATION_INTERVAL_DAYS_KEY,
+        intervalDays.toString()
+      );
 
       if (newSettings.enabled) {
         await scheduleNotification(newSettings);
       }
 
-      setProfile({
-        ...profile,
-        notificationSettings: newSettings,
-      });
-
-      if (newSettings.enabled) {
-        Alert.alert(
-          "Reminder Updated",
-          `You'll now receive reminders every ${intervalDays} day${
-            intervalDays > 1 ? "s" : ""
-          }.`
-        );
-      }
+      setNotificationSettings(newSettings);
     } catch (error) {
       console.error("Error updating interval:", error);
       Alert.alert(
@@ -177,20 +168,6 @@ export default function Profile() {
     ]);
   };
 
-  if (!profile) {
-    return (
-      <BackgroundGradient>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-              Loading profile...
-            </Text>
-          </View>
-        </SafeAreaView>
-      </BackgroundGradient>
-    );
-  }
-
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -224,11 +201,18 @@ export default function Profile() {
                   >
                     Email
                   </Text>
-                  <Text
-                    style={[styles.infoValue, { color: theme.colors.text }]}
-                  >
-                    {profile.email}
-                  </Text>
+                  {isLoadingProfile ? (
+                    <ActivityIndicator
+                      size='small'
+                      color={theme.colors.primary}
+                    />
+                  ) : (
+                    <Text
+                      style={[styles.infoValue, { color: theme.colors.text }]}
+                    >
+                      {authProfile?.email || "Loading..."}
+                    </Text>
+                  )}
                 </View>
               </View>
             </GlassyCard>
@@ -280,78 +264,95 @@ export default function Profile() {
               Notification Preferences
             </Text>
             <GlassyCard style={styles.card}>
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text
-                    style={[styles.settingLabel, { color: theme.colors.text }]}
-                  >
-                    Enable Reminders
-                  </Text>
+              {isLoadingProfile ? (
+                <View style={styles.loadingSection}>
+                  <ActivityIndicator
+                    size='small'
+                    color={theme.colors.primary}
+                  />
                   <Text
                     style={[
-                      styles.settingDescription,
+                      styles.loadingText,
                       { color: theme.colors.textMuted },
                     ]}
                   >
-                    Receive notifications when you haven't logged a spiritual
-                    impression
+                    Loading notification settings...
                   </Text>
                 </View>
-                <Switch
-                  value={profile.notificationSettings.enabled}
-                  onValueChange={handleNotificationToggle}
-                  disabled={isLoading}
-                  trackColor={{
-                    false: theme.colors.border,
-                    true: theme.colors.primary,
-                  }}
-                  thumbColor={
-                    profile.notificationSettings.enabled
-                      ? theme.colors.celestialGold
-                      : theme.colors.textMuted
-                  }
-                />
-              </View>
-
-              {profile.notificationSettings.enabled && (
-                <View style={styles.intervalSection}>
-                  <Text
-                    style={[styles.intervalTitle, { color: theme.colors.text }]}
-                  >
-                    Reminder Frequency
-                  </Text>
-                  <Text
-                    style={[
-                      styles.intervalDescription,
-                      { color: theme.colors.textMuted },
-                    ]}
-                  >
-                    How often would you like to receive reminders?
-                  </Text>
-
-                  {NOTIFICATION_INTERVALS.map((interval) => (
-                    <TouchableOpacity
-                      key={interval.value}
-                      style={[
-                        styles.intervalOption,
-                        profile.notificationSettings.intervalDays ===
-                          interval.value && styles.intervalOptionSelected,
-                      ]}
-                      onPress={() => handleIntervalChange(interval.value)}
-                      disabled={isLoading}
-                    >
+              ) : (
+                <>
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingInfo}>
                       <Text
                         style={[
-                          styles.intervalOptionText,
-                          profile.notificationSettings.intervalDays ===
-                            interval.value && styles.intervalOptionTextSelected,
+                          styles.settingLabel,
+                          { color: theme.colors.text },
                         ]}
                       >
-                        {interval.label}
+                        Enable Reminders
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                      <Text
+                        style={[
+                          styles.settingDescription,
+                          { color: theme.colors.textMuted },
+                        ]}
+                      >
+                        Receive notifications when you haven't logged a
+                        spiritual impression
+                      </Text>
+                    </View>
+                    <Switch
+                      value={notificationSettings.enabled}
+                      onValueChange={handleNotificationToggle}
+                      disabled={isLoading}
+                    />
+                  </View>
+
+                  {notificationSettings.enabled && (
+                    <View style={styles.intervalSection}>
+                      <Text
+                        style={[
+                          styles.intervalTitle,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        Reminder Frequency
+                      </Text>
+                      <Text
+                        style={[
+                          styles.intervalDescription,
+                          { color: theme.colors.textMuted },
+                        ]}
+                      >
+                        How often would you like to receive reminders?
+                      </Text>
+
+                      {NOTIFICATION_INTERVALS.map((interval) => (
+                        <TouchableOpacity
+                          key={interval.value}
+                          style={[
+                            styles.intervalOption,
+                            notificationSettings.intervalDays ===
+                              interval.value && styles.intervalOptionSelected,
+                          ]}
+                          onPress={() => handleIntervalChange(interval.value)}
+                          disabled={isLoading}
+                        >
+                          <Text
+                            style={[
+                              styles.intervalOptionText,
+                              notificationSettings.intervalDays ===
+                                interval.value &&
+                                styles.intervalOptionTextSelected,
+                            ]}
+                          >
+                            {interval.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </GlassyCard>
           </View>
@@ -379,20 +380,13 @@ export default function Profile() {
 
           {/* Logout Section */}
           <View style={styles.section}>
-            <GlassyCard style={styles.card}>
-              <TouchableOpacity
-                style={[
-                  styles.logoutButton,
-                  { borderColor: theme.colors.textMuted },
-                ]}
-                onPress={handleLogout}
-                disabled={isLoading}
-              >
+            <TouchableOpacity onPress={handleLogout} disabled={isLoading}>
+              <GlassyCard style={styles.card}>
                 <Text style={[styles.logoutButtonText, { color: "#e74c3c" }]}>
                   Sign Out
                 </Text>
-              </TouchableOpacity>
-            </GlassyCard>
+              </GlassyCard>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -413,13 +407,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
+  loadingSection: {
+    padding: 20,
     alignItems: "center",
+    justifyContent: "center",
   },
   loadingText: {
-    fontSize: 18,
+    fontSize: 14,
+    marginTop: 10,
   },
   header: {
     alignItems: "center",

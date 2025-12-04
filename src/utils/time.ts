@@ -27,10 +27,6 @@ export const formatDateTime = (dateString: string): string => {
   });
 };
 
-export const formatDateTimeInput = (date: Date): string => {
-  return date.toISOString().slice(0, 16); // Format for datetime-local input
-};
-
 export const getTimeSinceLastImpression = (
   lastImpressionDate: string
 ): number => {

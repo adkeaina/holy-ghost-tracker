@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ImpressionCategory } from "../types";
-import { saveCategory, updateCategory, deleteCategory } from "../utils/storage";
+import { useImpressions } from "../context/ImpressionsContext";
 import { useTheme } from "../theme";
 
 interface CategoryModalProps {
@@ -58,6 +58,7 @@ export default function CategoryModal({
   category,
   onSave,
 }: CategoryModalProps) {
+  const { saveCategory, updateCategory, deleteCategory } = useImpressions();
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] =
     useState<ImpressionCategory["color"]>("blue");
@@ -96,13 +97,11 @@ export default function CategoryModal({
         }
 
         await updateCategory(category.id, updates);
-        Alert.alert("Success", "Category updated successfully!");
       } else {
         await saveCategory({
           name: name.trim(),
           color: selectedColor,
         });
-        Alert.alert("Success", "Category created successfully!");
       }
 
       onSave();
@@ -133,7 +132,6 @@ export default function CategoryModal({
             setIsLoading(true);
             try {
               await deleteCategory(category.id);
-              Alert.alert("Success", "Category deleted successfully!");
               onSave();
               onClose();
             } catch (error) {

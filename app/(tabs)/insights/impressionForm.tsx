@@ -13,7 +13,7 @@ import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SpiritualImpression } from "@/src/types";
-import { updateImpression, deleteImpression } from "@/src/utils/storage";
+import { useImpressions } from "@/src/context/ImpressionsContext";
 import NewImpressionForm from "@/src/components/NewImpressionForm";
 import { useTheme } from "@/src/theme";
 
@@ -22,6 +22,8 @@ export default function ImpressionForm() {
   const [impression, setImpression] = useState<SpiritualImpression | null>(
     null
   );
+  const { updateImpression, deleteImpression, refreshImpressions } =
+    useImpressions();
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -49,9 +51,8 @@ export default function ImpressionForm() {
         dateTime: data.dateTime,
         categories: data.categories,
       });
-
+      await refreshImpressions();
       router.back();
-      Alert.alert("Success", "Impression updated successfully!");
     } catch (error) {
       console.error("Error updating impression:", error);
       Alert.alert("Error", "Failed to update impression. Please try again.");
@@ -76,8 +77,8 @@ export default function ImpressionForm() {
           onPress: async () => {
             try {
               await deleteImpression(impression.id);
+              await refreshImpressions();
               router.back();
-              Alert.alert("Success", "Impression deleted successfully.");
             } catch (error) {
               console.error("Error deleting impression:", error);
               Alert.alert(

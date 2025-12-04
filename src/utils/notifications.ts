@@ -72,12 +72,3 @@ export const scheduleNotification = async (
     throw error;
   }
 };
-
-export const cancelAllNotifications = async (): Promise<void> => {
-  try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-  } catch (error) {
-    console.error("Error canceling notifications:", error);
-    throw error;
-  }
-};

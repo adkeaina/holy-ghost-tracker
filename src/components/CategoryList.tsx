@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ImpressionCategory } from "../types";
-import { getCategories } from "../utils/storage";
+import { useImpressions } from "../context/ImpressionsContext";
 import CategoryChip from "./CategoryChip";
 import CategoryModal from "./CategoryModal";
 import { useTheme } from "../theme";
@@ -26,25 +26,12 @@ export default function CategoryList({
   onSelectionChange,
   style,
 }: CategoryListProps) {
-  const [categories, setCategories] = useState<ImpressionCategory[]>([]);
+  const { categories, refreshImpressions } = useImpressions();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
     ImpressionCategory | undefined
   >();
   const { theme } = useTheme();
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    try {
-      const loadedCategories = await getCategories();
-      setCategories(loadedCategories);
-    } catch (error) {
-      console.error("Error loading categories:", error);
-    }
-  };
 
   const isSelected = (categoryId: number) => {
     return selectedCategories.includes(categoryId);
@@ -83,7 +70,7 @@ export default function CategoryList({
   };
 
   const handleModalSave = () => {
-    loadCategories(); // Refresh the categories list
+    refreshImpressions(); // Refresh the categories list
   };
 
   return (

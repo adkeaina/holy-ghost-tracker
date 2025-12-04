@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import {
   SafeAreaView,
@@ -18,11 +19,11 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SpiritualImpression } from "@/src/types";
 import {
-  getLastImpression,
   resetCategoriesToDefault,
   getEnv,
   resetUserInfo,
 } from "@/src/utils/storage";
+import { useImpressions } from "@/src/context/ImpressionsContext";
 import {
   formatTimeDuration,
   getTimeSinceLastImpression,
@@ -37,8 +38,12 @@ import { useTheme, getTabBarPadding } from "@/src/theme";
 const environment = getEnv("EXPO_PUBLIC_NODE_ENV");
 
 export default function Home() {
-  const [lastImpression, setLastImpression] =
-    useState<SpiritualImpression | null>(null);
+  const {
+    getLastImpression: getLastImpressionFromContext,
+    refreshImpressions,
+    isLoading,
+  } = useImpressions();
+  const lastImpression = getLastImpressionFromContext();
   const [timeSince, setTimeSince] = useState<number>(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const [expandedImpression, setExpandedImpression] = useState<boolean>(false);
@@ -47,15 +52,18 @@ export default function Home() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Load last impression when screen focuses
+  // Refresh impressions when screen focuses
   useFocusEffect(
     useCallback(() => {
-      loadLastImpression();
-    }, [])
+      refreshImpressions();
+    }, [refreshImpressions])
   );
 
   // Update timer every second
   useEffect(() => {
+    if (lastImpression) {
+      setTimeSince(getTimeSinceLastImpression(lastImpression.dateTime));
+    }
     const interval = setInterval(() => {
       if (lastImpression) {
         setTimeSince(getTimeSinceLastImpression(lastImpression.dateTime));
@@ -64,18 +72,6 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, [lastImpression]);
-
-  const loadLastImpression = async () => {
-    try {
-      const impression = await getLastImpression();
-      setLastImpression(impression);
-      if (impression) {
-        setTimeSince(getTimeSinceLastImpression(impression.dateTime));
-      }
-    } catch (error) {
-      console.error("Error loading last impression:", error);
-    }
-  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -229,11 +225,30 @@ export default function Home() {
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                 Last Spiritual Impression
               </Text>
-              <Impression
-                impression={lastImpression}
-                expanded={expandedImpression}
-                onPress={() => setExpandedImpression((prev) => !prev)}
-              />
+              {!lastImpression && isLoading ? (
+                <GlassyCard style={styles.loadingCard}>
+                  <View style={styles.loadingSection}>
+                    <ActivityIndicator
+                      size='small'
+                      color={theme.colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.loadingText,
+                        { color: theme.colors.textMuted },
+                      ]}
+                    >
+                      Loading impressions...
+                    </Text>
+                  </View>
+                </GlassyCard>
+              ) : (
+                <Impression
+                  impression={lastImpression}
+                  expanded={expandedImpression}
+                  onPress={() => setExpandedImpression((prev) => !prev)}
+                />
+              )}
             </View>
 
             {/* Stopwatch */}
@@ -257,7 +272,7 @@ export default function Home() {
               </Text>
               <GlassyCard style={styles.newImpressionFormCard}>
                 <NewImpressionForm
-                  onSuccess={loadLastImpression}
+                  onSuccess={refreshImpressions}
                   onDescriptionFocus={scrollToBottom}
                 />
               </GlassyCard>
@@ -338,5 +353,18 @@ const styles = StyleSheet.create({
   newImpressionFormCard: {
     alignItems: "flex-start",
     justifyContent: "flex-start",
+  },
+  loadingCard: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingSection: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 10,
   },
 });

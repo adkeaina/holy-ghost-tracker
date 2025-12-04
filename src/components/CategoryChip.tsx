@@ -28,7 +28,7 @@ const COLOR_MAP = {
   yellow: "#f1c40f",
 };
 
-export default function CategoryChip({
+function CategoryChip({
   category,
   isSelected = false,
   onPress,
@@ -119,4 +119,16 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: 16,
   },
+});
+
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(CategoryChip, (prevProps, nextProps) => {
+  return (
+    prevProps.category.id === nextProps.category.id &&
+    prevProps.category.name === nextProps.category.name &&
+    prevProps.category.color === nextProps.category.color &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.size === nextProps.size &&
+    prevProps.disabled === nextProps.disabled
+  );
 });

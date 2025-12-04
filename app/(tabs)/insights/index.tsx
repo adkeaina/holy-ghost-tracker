@@ -16,15 +16,15 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { SpiritualImpression, ImpressionCategory } from "@/src/types";
-import { getImpressions } from "@/src/utils/storage";
+import { SpiritualImpression } from "@/src/types";
+import { useImpressions } from "@/src/context/ImpressionsContext";
 import Impression from "@/src/components/Impression";
 import FilterModal, { FilterOptions } from "@/src/components/FilterModal";
 import BackgroundGradient from "@/src/components/BackgroundGradient";
 import { useTheme, getTabBarPadding } from "@/src/theme";
 
 export default function Insights() {
-  const [impressions, setImpressions] = useState<SpiritualImpression[]>([]);
+  const { impressions, refreshImpressions } = useImpressions();
   const [expandedImpression, setExpandedImpression] =
     useState<SpiritualImpression | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -38,8 +38,8 @@ export default function Insights() {
 
   useFocusEffect(
     useCallback(() => {
-      loadImpressions();
-    }, [])
+      refreshImpressions();
+    }, [refreshImpressions])
   );
 
   // Filter impressions based on current filters
@@ -140,36 +140,26 @@ export default function Insights() {
     return filtered;
   }, [impressions, filters]);
 
-  const loadImpressions = async () => {
-    try {
-      const allImpressions = await getImpressions();
-      // Sort by dateTime, most recent first
-      const sorted = allImpressions.sort(
-        (a, b) =>
-          new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+  const handleImpressionPress = useCallback(
+    (impression: SpiritualImpression) => {
+      setExpandedImpression((prev) =>
+        prev?.id === impression.id ? null : impression
       );
-      setImpressions(sorted);
-    } catch (error) {
-      console.error("Error loading impressions:", error);
-    }
-  };
+    },
+    []
+  );
 
-  const handleImpressionPress = (impression: SpiritualImpression) => {
-    if (expandedImpression?.id === impression.id) {
-      setExpandedImpression(null);
-    } else {
-      setExpandedImpression(impression);
-    }
-  };
-
-  const handleImpressionLongPress = (impression: SpiritualImpression) => {
-    router.push({
-      pathname: "/(tabs)/insights/impressionForm",
-      params: {
-        impression: JSON.stringify(impression),
-      },
-    });
-  };
+  const handleImpressionLongPress = useCallback(
+    (impression: SpiritualImpression) => {
+      router.push({
+        pathname: "/(tabs)/insights/impressionForm",
+        params: {
+          impression: JSON.stringify(impression),
+        },
+      });
+    },
+    []
+  );
 
   const handleFilterPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -192,17 +182,22 @@ export default function Insights() {
     );
   };
 
-  const renderImpression = ({ item }: { item: SpiritualImpression }) => (
-    <View style={styles.impressionContainer}>
-      <Impression
-        impression={item}
-        onPress={handleImpressionPress}
-        onLongPress={handleImpressionLongPress}
-        expanded={expandedImpression?.id === item.id}
-        activeOpacity={0.2}
-      />
-    </View>
+  const renderImpression = useCallback(
+    ({ item }: { item: SpiritualImpression }) => (
+      <View style={styles.impressionContainer}>
+        <Impression
+          impression={item}
+          onPress={handleImpressionPress}
+          onLongPress={handleImpressionLongPress}
+          expanded={expandedImpression?.id === item.id}
+          activeOpacity={0.2}
+        />
+      </View>
+    ),
+    [handleImpressionPress, handleImpressionLongPress, expandedImpression?.id]
   );
+
+  const keyExtractor = useCallback((item: SpiritualImpression) => item.id, []);
 
   return (
     <BackgroundGradient>
@@ -214,14 +209,16 @@ export default function Insights() {
                 <Text style={[styles.title, { color: theme.colors.text }]}>
                   All Impressions 🕊️
                 </Text>
-                <Text
-                  style={[styles.subtitle, { color: theme.colors.textMuted }]}
-                >
-                  {filteredImpressions.length} of {impressions.length}{" "}
-                  impression
-                  {impressions.length !== 1 ? "s" : ""}
-                  {hasActiveFilters() && " (filtered)"}
-                </Text>
+                {hasActiveFilters() && (
+                  <Text
+                    style={[styles.subtitle, { color: theme.colors.textMuted }]}
+                  >
+                    {filteredImpressions.length} of {impressions.length}{" "}
+                    impression
+                    {impressions.length !== 1 ? "s" : ""}
+                    {hasActiveFilters() && " (filtered)"}
+                  </Text>
+                )}
               </View>
               <TouchableOpacity
                 style={[
@@ -257,13 +254,18 @@ export default function Insights() {
             filteredImpressions.length > 0 ? (
               <FlatList
                 data={filteredImpressions}
-                keyExtractor={(item) => item.id}
+                keyExtractor={keyExtractor}
                 renderItem={renderImpression}
                 contentContainerStyle={[
                   styles.listContainer,
                   { paddingBottom: getTabBarPadding(insets.bottom) },
                 ]}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                updateCellsBatchingPeriod={50}
+                windowSize={10}
               />
             ) : (
               <View style={styles.emptyContainer}>
@@ -388,9 +390,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-  },
-  filterButtonActive: {
-    backgroundColor: "#ddeaf7",
   },
   filterIndicator: {
     position: "absolute",

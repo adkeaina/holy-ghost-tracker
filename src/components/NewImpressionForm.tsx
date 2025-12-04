@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import DateTimePicker from "./DateTimePicker";
-import { saveImpression } from "../utils/storage";
+import { useImpressions } from "../context/ImpressionsContext";
 import CategoryList from "./CategoryList";
 import { useTheme } from "../theme";
 import { DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -22,7 +22,6 @@ interface NewImpressionFormProps {
   initialDateTime?: string;
   initialCategories?: number[];
   isEdit?: boolean;
-  impressionId?: string;
   onUpdate?: (data: {
     description: string;
     dateTime: string;
@@ -37,10 +36,10 @@ export default function NewImpressionForm({
   initialDateTime,
   initialCategories = [],
   isEdit = false,
-  impressionId,
   onUpdate,
   onDescriptionFocus,
 }: NewImpressionFormProps) {
+  const { saveImpression } = useImpressions();
   const [description, setDescription] = useState(initialDescription);
   const [selectedDate, setSelectedDate] = useState<Date>(
     initialDateTime ? new Date(initialDateTime) : new Date()
@@ -112,7 +111,6 @@ export default function NewImpressionForm({
         setDescription("");
         setSelectedDate(new Date());
         setSelectedCategories([]);
-        Alert.alert("Success", "Spiritual impression saved successfully!");
       }
 
       if (onSuccess) {
@@ -248,16 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  dateButton: {
-    borderWidth: 1,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 200,
-  },
-  dateButtonText: {
-    fontSize: 16,
-  },
   textInput: {
     borderWidth: 1,
     borderRadius: 10,
@@ -270,12 +258,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginHorizontal: 0,
-  },
-  submitButtonSecondary: {
-    backgroundColor: "#27ae60",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#95a5a6",
   },
   submitButtonText: {
     fontSize: 16,
