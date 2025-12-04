@@ -96,13 +96,11 @@ export default function CategoryModal({
         }
 
         await updateCategory(category.id, updates);
-        Alert.alert("Success", "Category updated successfully!");
       } else {
         await saveCategory({
           name: name.trim(),
           color: selectedColor,
         });
-        Alert.alert("Success", "Category created successfully!");
       }
 
       onSave();
@@ -133,7 +131,6 @@ export default function CategoryModal({
             setIsLoading(true);
             try {
               await deleteCategory(category.id);
-              Alert.alert("Success", "Category deleted successfully!");
               onSave();
               onClose();
             } catch (error) {

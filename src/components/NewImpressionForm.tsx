@@ -112,7 +112,6 @@ export default function NewImpressionForm({
         setDescription("");
         setSelectedDate(new Date());
         setSelectedCategories([]);
-        Alert.alert("Success", "Spiritual impression saved successfully!");
       }
 
       if (onSuccess) {

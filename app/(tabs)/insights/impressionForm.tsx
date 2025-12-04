@@ -51,7 +51,6 @@ export default function ImpressionForm() {
       });
 
       router.back();
-      Alert.alert("Success", "Impression updated successfully!");
     } catch (error) {
       console.error("Error updating impression:", error);
       Alert.alert("Error", "Failed to update impression. Please try again.");
@@ -77,7 +76,6 @@ export default function ImpressionForm() {
             try {
               await deleteImpression(impression.id);
               router.back();
-              Alert.alert("Success", "Impression deleted successfully.");
             } catch (error) {
               console.error("Error deleting impression:", error);
               Alert.alert(
